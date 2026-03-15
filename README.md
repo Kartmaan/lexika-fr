@@ -5,7 +5,7 @@ Lexika est une application de bureau Python permettant de consulter un dictionna
 ---
 
 ## Aperçu
-
+![Interface](assets/readme/dico_cap.png)
 ---
 
 ## Fonctionnalités principales
@@ -125,6 +125,8 @@ L'onglet principal de l'application.
 
 Le lexique personnel, organisé en deux colonnes.
 
+![Lexique](assets/readme/lexique_cap.png)
+
 **Colonne gauche — liste des mots**
 - Les mots enregistrés apparaissent par ordre alphabétique sous forme de vignettes
 - Les mots issus du dictionnaire apparaissent en bleu
@@ -145,6 +147,8 @@ Le lexique personnel, organisé en deux colonnes.
 ## Onglet Quiz
 
 Un outil de révision du vocabulaire enregistré dans le lexique.
+
+![Quiz](assets/readme/quiz_cap.png)
 
 **Déroulement**
 - Le quiz ne peut démarrer que si le lexique contient au moins un mot
@@ -172,6 +176,9 @@ Source originale : http://redac.univ-tlse2.fr/lexiques/wiktionaryx.html
 Le fichier `french_dict.db` est hébergé séparément sur Hugging Face (licence CC BY-SA 4.0) :
 👉 https://huggingface.co/datasets/Kartmaan/french-dictionary
 
+Lors du premier démarrage de l'application, si aucun dictionnaire n'est détécté dans le dossier `data`, l'utilisateur se voit proposer la possibilité de le télécharger automatiquement depuis la source ou, s'il possède déjà une base de donnée compatible, de l'importer depuis son disque.
+
+![Download](assets/readme/download_cap.png)
 ---
 
 ## Licences
