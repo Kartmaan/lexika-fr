@@ -50,7 +50,7 @@ class TabQuiz(ctk.CTkFrame):
         self.grid_rowconfigure(1, weight=1)
 
         # En-tête
-        entete = ctk.CTkFrame(self, fg_color=COULEUR_SURFACE, corner_radius=12)
+        entete = ctk.CTkFrame(self, fg_color=COULEUR_SURFACE, corner_radius=0)
         entete.grid(row=0, column=0, sticky="ew", padx=20, pady=(20, 10))
 
         ctk.CTkLabel(
@@ -75,7 +75,7 @@ class TabQuiz(ctk.CTkFrame):
             fg_color=COULEUR_SURFACE2,
             hover_color="#3A3A5C",
             text_color=COULEUR_ACCENT,
-            height=34, corner_radius=8,
+            height=34, corner_radius=0,
             command=self._demarrer_session,
         )
         self._btn_recommencer.pack(side="right", padx=12, pady=10)
@@ -106,7 +106,7 @@ class TabQuiz(ctk.CTkFrame):
         cadre = ctk.CTkFrame(
             self._zone_centrale,
             fg_color=COULEUR_SURFACE,
-            corner_radius=16,
+            corner_radius=0,
         )
         cadre.grid(row=0, column=0)
 
@@ -114,7 +114,7 @@ class TabQuiz(ctk.CTkFrame):
 
         ctk.CTkLabel(
             cadre,
-            text="🧠" if not vide else "📚",
+            text="?",
             font=ctk.CTkFont(size=48),
             text_color=COULEUR_TEXTE,
         ).pack(pady=(32, 8), padx=48)
@@ -140,7 +140,7 @@ class TabQuiz(ctk.CTkFrame):
                 fg_color=COULEUR_ACCENT,
                 hover_color="#3A8EEF",
                 text_color="white",
-                height=44, width=200, corner_radius=10,
+                height=44, width=200, corner_radius=0,
                 command=self._demarrer_session,
             ).pack(pady=(0, 32))
 
@@ -152,13 +152,13 @@ class TabQuiz(ctk.CTkFrame):
         cadre = ctk.CTkFrame(
             self._zone_centrale,
             fg_color=COULEUR_SURFACE,
-            corner_radius=16,
+            corner_radius=0,
         )
         cadre.grid(row=0, column=0)
 
         ctk.CTkLabel(
             cadre,
-            text="🎉",
+            text="Bravo !",
             font=ctk.CTkFont(size=48),
         ).pack(pady=(32, 8), padx=64)
 
@@ -177,7 +177,7 @@ class TabQuiz(ctk.CTkFrame):
             fg_color=COULEUR_ACCENT,
             hover_color="#3A8EEF",
             text_color="white",
-            height=44, width=160, corner_radius=10,
+            height=44, width=160, corner_radius=0,
             command=self._demarrer_session,
         ).pack(pady=(0, 32))
 
@@ -202,7 +202,7 @@ class TabQuiz(ctk.CTkFrame):
         self._carte = ctk.CTkFrame(
             wrapper,
             fg_color=couleur_carte,
-            corner_radius=16,
+            corner_radius=0,
             border_width=2,
             border_color=border_carte,
             width=560,
@@ -225,7 +225,7 @@ class TabQuiz(ctk.CTkFrame):
             border_color="#3A3A5C",
             border_width=1,
             text_color=COULEUR_TEXTE,
-            height=42, width=200, corner_radius=10,
+            height=42, width=200, corner_radius=0,
             command=self._mot_suivant,
         )
         self._btn_suivant.grid(row=1, column=0)
@@ -253,7 +253,7 @@ class TabQuiz(ctk.CTkFrame):
             fg_color="#2A4A7A",
             hover_color="#3A5A8A",
             text_color="#A8D0FF",
-            height=40, width=180, corner_radius=10,
+            height=40, width=180, corner_radius=0,
             command=self._retourner_carte,
         ).grid(row=2, column=0, pady=(0, 28))
 
@@ -283,7 +283,7 @@ class TabQuiz(ctk.CTkFrame):
                 font=ctk.CTkFont(family="Georgia", size=10, weight="bold"),
                 fg_color="#2A5A3A",
                 text_color="#80C8A0",
-                corner_radius=4,
+                corner_radius=0,
                 height=20,
             ).grid(row=row, column=0, sticky="w", padx=24, pady=(4, 2))
             row += 1
@@ -321,7 +321,7 @@ class TabQuiz(ctk.CTkFrame):
             fg_color="#2A5A3A",
             hover_color="#3A6A4A",
             text_color="#80C8A0",
-            height=40, width=180, corner_radius=10,
+            height=40, width=180, corner_radius=0,
             command=self._retourner_carte,
         ).grid(row=row, column=0, pady=(12, 24))
 

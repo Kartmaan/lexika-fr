@@ -12,12 +12,15 @@ depuis Hugging Face.
 
 Pour utiliser des chemins personnalisés :
     python main.py --db /chemin/vers/mon_dict.db --lexique /chemin/vers/lexique.json
+
+Author : Kartmaan
+Date : 2026-03-15
+Version : 1.0.0
 """
 
 import sys
 import argparse
 from pathlib import Path
-
 
 def main():
     parser = argparse.ArgumentParser(
@@ -50,7 +53,6 @@ def main():
         except Exception as e:
             print(f"\nErreur au lancement : {e}", file=sys.stderr)
             sys.exit(1)
-
 
 if __name__ == "__main__":
     main()

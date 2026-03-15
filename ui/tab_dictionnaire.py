@@ -8,6 +8,48 @@ import customtkinter as ctk
 from tkinter import StringVar
 
 
+def _lier_molette(scrollable_frame):
+    """Active la molette souris sur un CTkScrollableFrame (Linux + Windows)."""
+    canvas = scrollable_frame._parent_canvas
+
+    def scroll(delta):
+        canvas.yview_scroll(delta, "units")
+
+    def on_enter(_):
+        scrollable_frame.bind_all("<Button-4>",   lambda e: scroll(-1))
+        scrollable_frame.bind_all("<Button-5>",   lambda e: scroll(1))
+        scrollable_frame.bind_all("<MouseWheel>", lambda e: scroll(int(-1 * e.delta / 120)))
+
+    def on_leave(_):
+        scrollable_frame.unbind_all("<Button-4>")
+        scrollable_frame.unbind_all("<Button-5>")
+        scrollable_frame.unbind_all("<MouseWheel>")
+
+    scrollable_frame.bind("<Enter>", on_enter, add="+")
+    scrollable_frame.bind("<Leave>", on_leave, add="+")
+
+
+def _configurer_entree(entree):
+    """Corrige Ctrl+A et coller-sur-selection pour un CTkEntry sur Linux."""
+    inner = entree._entry
+
+    def ctrl_a(e):
+        inner.select_range(0, "end")
+        inner.icursor("end")
+        return "break"
+
+    def coller(e):
+        try:
+            if inner.selection_present():
+                inner.delete("sel.first", "sel.last")
+        except Exception:
+            pass
+
+    inner.bind("<Control-a>", ctrl_a)
+    inner.bind("<Control-A>", ctrl_a)
+    inner.bind("<<Paste>>", coller, add="+")
+
+
 # Couleurs et styles centralisés
 COULEUR_ACCENT    = "#4A9EFF"
 COULEUR_SUCCES    = "#3DBE7A"
@@ -53,7 +95,7 @@ class TabDictionnaire(ctk.CTkFrame):
         self.grid_rowconfigure(1, weight=1)
 
         # --- Barre de recherche ---
-        barre = ctk.CTkFrame(self, fg_color=COULEUR_SURFACE, corner_radius=12,
+        barre = ctk.CTkFrame(self, fg_color=COULEUR_SURFACE, corner_radius=0,
                              border_width=1, border_color="#2E2E42")
         barre.grid(row=0, column=0, sticky="ew", padx=20, pady=(20, 10))
         barre.grid_columnconfigure(0, weight=1)
@@ -68,10 +110,11 @@ class TabDictionnaire(ctk.CTkFrame):
             border_color="#3A3A5C",
             text_color=COULEUR_TEXTE,
             height=44,
-            corner_radius=8,
+            corner_radius=0,
         )
         self._champ.grid(row=0, column=0, padx=(16, 8), pady=12, sticky="ew")
         self._champ.bind("<Return>", lambda e: self._lancer_recherche())
+        _configurer_entree(self._champ)
 
         self._btn_recherche = ctk.CTkButton(
             barre,
@@ -82,13 +125,13 @@ class TabDictionnaire(ctk.CTkFrame):
             text_color="white",
             height=44,
             width=130,
-            corner_radius=8,
+            corner_radius=0,
             command=self._lancer_recherche,
         )
         self._btn_recherche.grid(row=0, column=1, padx=(0, 16), pady=12)
 
         # --- Zone de résultat ---
-        zone = ctk.CTkFrame(self, fg_color=COULEUR_SURFACE, corner_radius=12,
+        zone = ctk.CTkFrame(self, fg_color=COULEUR_SURFACE, corner_radius=0,
                             border_width=1, border_color="#2E2E42")
         zone.grid(row=1, column=0, sticky="nsew", padx=20, pady=(0, 10))
         zone.grid_columnconfigure(0, weight=1)
@@ -114,6 +157,7 @@ class TabDictionnaire(ctk.CTkFrame):
         )
         self._zone_def.grid(row=1, column=0, sticky="nsew", padx=4, pady=4)
         self._zone_def.grid_columnconfigure(0, weight=1)
+        _lier_molette(self._zone_def)
 
         # Message d'accueil initial
         self._afficher_accueil()
@@ -141,7 +185,7 @@ class TabDictionnaire(ctk.CTkFrame):
             text_color="white",
             height=38,
             width=180,
-            corner_radius=8,
+            corner_radius=0,
             state="disabled",
             command=self._ajouter_au_lexique,
         )
@@ -254,7 +298,7 @@ class TabDictionnaire(ctk.CTkFrame):
                 text_color=COULEUR_ACCENT,
                 height=34,
                 anchor="w",
-                corner_radius=6,
+                corner_radius=0,
                 command=lambda m=suggestion: self._rechercher_suggestion(m),
             )
             btn.grid(row=i + 1, column=0, sticky="w", padx=16, pady=3)
@@ -278,7 +322,7 @@ class TabDictionnaire(ctk.CTkFrame):
                 font=ctk.CTkFont(family="Georgia", size=11, weight="bold"),
                 fg_color="#3A3A5C",
                 text_color=COULEUR_ACCENT,
-                corner_radius=4,
+                corner_radius=0,
                 height=22,
             )
             badge.grid(row=row, column=0, sticky="w", padx=16, pady=(16, 4))

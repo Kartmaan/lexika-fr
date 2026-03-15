@@ -3,3 +3,4 @@ __pycache__/
 *.pyc
 *.pyo
 data/french_dict.db
+data/lexique.json
