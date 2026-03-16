@@ -1,21 +1,20 @@
 """
 main.py
 -------
-Point d'entrée de Lexika.
+Entry point for Lexika.
 
-Lancement :
+Usage:
     python main.py
 
-Si le fichier french_dict.db est absent du dossier data/,
-une fenêtre de setup propose de le télécharger automatiquement
-depuis Hugging Face.
+If french_dict.db is missing from the data/ folder, a setup window
+automatically offers to download or import it.
 
-Pour utiliser des chemins personnalisés :
-    python main.py --db /chemin/vers/mon_dict.db --lexique /chemin/vers/lexique.json
+Custom paths:
+    python main.py --db /path/to/dict.db --lexicon /path/to/lexicon.json
 
-Author : Kartmaan
-Date : 2026-03-15
-Version : 1.0.0
+Author  : Kartmaan
+Date    : 2026-03-16
+Version : 1.0.1
 """
 
 import sys
@@ -24,34 +23,34 @@ from pathlib import Path
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Lexika — Dictionnaire français et lexique personnel."
+        description="Lexika - French dictionary and personal lexicon."
     )
     parser.add_argument(
         "--db",
         default=str(Path(__file__).parent / "data" / "french_dict.db"),
-        help="Chemin vers la base SQLite du dictionnaire"
+        help="Path to the SQLite dictionary database"
     )
     parser.add_argument(
-        "--lexique",
-        default=str(Path(__file__).parent / "data" / "lexique.json"),
-        help="Chemin vers le fichier JSON du lexique personnel"
+        "--lexicon",
+        default=str(Path(__file__).parent / "data" / "lexicon.json"),
+        help="Path to the personal lexicon JSON file"
     )
     args = parser.parse_args()
     db_path = Path(args.db)
 
     if not db_path.exists():
-        # Dictionnaire absent — proposer le téléchargement
+        # Dictionary missing - offer download / import
         from ui.setup_window import SetupWindow
         setup = SetupWindow()
         setup.mainloop()
     else:
-        # Dictionnaire présent — lancement direct
+        # Dictionary present - launch directly
         from ui.app import App
         try:
-            app = App(db_path=db_path, lexique_path=args.lexique)
+            app = App(db_path=db_path, lexicon_path=args.lexicon)
             app.mainloop()
         except Exception as e:
-            print(f"\nErreur au lancement : {e}", file=sys.stderr)
+            print(f"\nLaunch error: {e}", file=sys.stderr)
             sys.exit(1)
 
 if __name__ == "__main__":

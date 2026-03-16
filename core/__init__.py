@@ -1,4 +1,4 @@
-from .dictionnaire import Dictionnaire
-from .lexique import Lexique
+from .dictionary import Dictionary
+from .lexicon import Lexicon
 
-__all__ = ["Dictionnaire", "Lexique"]
+__all__ = ["Dictionary", "Lexicon"]

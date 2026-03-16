@@ -1,37 +1,38 @@
-# Lexika — Dictionnaire français hors-ligne
+# Lexika - Offline French Dictionary
 
-Lexika est une application de bureau Python permettant de consulter un dictionnaire français complet en local, de constituer un lexique personnel de vocabulaire et de le réviser sous forme de quiz interactif.
-
----
-
-## Aperçu
-![Interface](assets/readme/dico_cap.png)
----
-
-## Fonctionnalités principales
-
-- **Dictionnaire hors-ligne** de plus de 800 000 entrées françaises, incluant les formes conjuguées
-- **Définitions structurées** : sous-définitions, exemples d'usage, registres (familier, littéraire, vieux...) et domaines (musique, informatique...)
-- **Suggestions intelligentes** en cas de mot introuvable, avec prise en charge des accents manquants (`element` → `élément`)
-- **Lexique personnel** pour sauvegarder les mots qui vous intéressent
-- **Mots personnalisés** : ajoutez vos propres définitions pour des termes absents du dictionnaire
-- **Quiz de vocabulaire** pour réviser les mots de votre lexique
-- **Import / Export** du lexique au format JSON
-- **Interface sombre moderne** construite avec CustomTkinter
-- **Fenêtre redimensionnable** avec contenu adaptatif
+Lexika is a Python desktop application for browsing a complete French dictionary locally, building a personal vocabulary lexicon, and reviewing it through an interactive quiz.
 
 ---
 
-## Prérequis
+## Overview
+![Interface](assets/readme/dict_cap.png)
 
-- Python 3.10 ou supérieur
-- Les dépendances listées dans `requirements.txt`
+---
+
+## Key Features
+
+- **Offline dictionary** with over 800,000 French entries, including conjugated verb forms
+- **Structured definitions**: sub-definitions, usage examples, registers (familiar, literary, archaic...) and domains (music, computing...)
+- **Smart suggestions** when a word is not found, with support for missing accents (`element` → `élément`)
+- **Personal lexicon** to save words you want to remember
+- **Custom words**: add your own definitions for terms not found in the dictionary
+- **Vocabulary quiz** to review the words in your lexicon
+- **Import / Export** the lexicon as a JSON file
+- **Modern dark interface** built with CustomTkinter
+- **Resizable window** with adaptive layout
+
+---
+
+## Requirements
+
+- Python 3.10 or higher
+- Dependencies listed in `requirements.txt`
 
 ```bash
 pip install -r requirements.txt
 ```
 
-`requirements.txt` :
+`requirements.txt`:
 ```
 customtkinter
 pillow
@@ -39,153 +40,155 @@ pillow
 
 ---
 
-## Installation et premier lancement
+## Installation and First Launch
 
-### 1. Cloner le dépôt
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/Kartmaan/lexika-fr.git
 cd lexika-fr
 ```
 
-### 2. Installer les dépendances
+### 2. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3. Lancer l'application
+### 3. Run the application
 
 ```bash
 python main.py
 ```
 
-Au premier lancement, si le fichier `data/french_dict.db` est absent, une fenêtre de configuration s'affiche automatiquement et vous propose deux options :
+On first launch, if `data/french_dict.db` is missing, a setup window appears automatically and offers two options:
 
-- **Télécharger** le dictionnaire depuis Hugging Face (~270 Mo)
-- **Importer** un fichier `.db` compatible déjà présent sur votre disque
+- **Download** the dictionary from Hugging Face (~270 MB)
+- **Import** a compatible `.db` file already on your disk
 
-Le fichier est vérifié automatiquement avant utilisation (extension, structure SQLite, présence des données).
+The file is automatically validated before use (extension, SQLite structure, data presence).
+
+![Download](assets/readme/download_cap.png)
 
 ---
 
-## Structure du projet
+## Project Structure
 
 ```
 lexika-fr/
-├── main.py                  # Point d'entrée
+├── main.py                  # Entry point
 ├── requirements.txt
 ├── assets/
-│   ├── icon.png             # Icône Linux
-│   ├── icon.ico             # Icône Windows
-│   └── icon.icns            # Icône macOS
+│   ├── icon.png             # Linux icon
+│   ├── icon.ico             # Windows icon
+│   └── icon.icns            # macOS icon
 ├── core/
-│   ├── dictionnaire.py      # Requêtes SQLite + suggestions
-│   └── lexique.py           # Gestion du lexique JSON
+│   ├── dictionnaire.py      # SQLite queries + suggestions
+│   └── lexique.py           # Lexicon JSON management
 ├── ui/
-│   ├── app.py               # Fenêtre principale et onglets
-│   ├── setup_window.py      # Fenêtre de premier lancement
-│   ├── tab_dictionnaire.py  # Onglet Dictionnaire
-│   ├── tab_lexique.py       # Onglet Lexique
-│   └── tab_quiz.py          # Onglet Quiz
+│   ├── app.py               # Main window and tabs
+│   ├── setup_window.py      # First-launch setup window
+│   ├── tab_dictionnaire.py  # Dictionary tab
+│   ├── tab_lexique.py       # Lexicon tab
+│   └── tab_quiz.py          # Quiz tab
 └── data/
-    ├── french_dict.db       # Base SQLite (générée au setup)
-    └── lexique.json         # Lexique personnel (créé automatiquement)
+    ├── french_dict.db       # SQLite database (generated at setup)
+    └── lexique.json         # Personal lexicon (auto-created)
 ```
 
 ---
 
-## Onglet Dictionnaire
+## Dictionary Tab
 
-L'onglet principal de l'application.
+The main tab of the application.
 
-**Recherche**
-- Saisissez un mot dans le champ de recherche et validez avec le bouton ou la touche `Entrée`
-- La recherche est insensible à la casse
+**Search**
+- Type a word in the search field and confirm with the button or the `Enter` key
+- Search is case-insensitive
 
-**Affichage des résultats**
-- Les définitions sont regroupées par partie du discours (Nom, Verbe, Adjectif...) avec un badge de couleur
-- Chaque définition est numérotée et peut contenir :
-  - Des sous-définitions hiérarchisées
-  - Des exemples d'usage en italique
-  - Des étiquettes de registre *(familier)*, de sens *[figuré]* ou de domaine *‹musique›*
+**Results display**
+- Definitions are grouped by part of speech (Noun, Verb, Adjective...) with a color badge
+- Each definition is numbered and may include:
+  - Hierarchical sub-definitions
+  - Usage examples in italics
+  - Register tags *(familiar)*, semantic tags *[figurative]* or domain tags *‹music›*
 
-**Mot introuvable**
-- Si le mot n'existe pas dans le dictionnaire, Lexika propose automatiquement des mots proches
-- La recherche approximative prend en charge les **accents manquants** : taper `element` suggère `élément`, taper `enchevetre` suggère `enchevêtré`
-- Cliquer sur une suggestion lance directement sa définition
+**Word not found**
+- If the word does not exist in the dictionary, Lexika automatically suggests similar words
+- The fuzzy search handles **missing accents**: typing `element` suggests `élément`, typing `enchevetre` suggests `enchevêtré`
+- Clicking a suggestion directly loads its definition
 
-**Ajout au lexique**
-- Un bouton **Ajouter au lexique** est disponible sous chaque résultat
-- Si le mot est déjà présent dans le lexique, un message vous en informe
+**Copy to clipboard**
+- Copies the selected word and its definitions to the clipboard.
 
----
-
-## Onglet Lexique
-
-Le lexique personnel, organisé en deux colonnes.
-
-![Lexique](assets/readme/lexique_cap.png)
-
-**Colonne gauche — liste des mots**
-- Les mots enregistrés apparaissent par ordre alphabétique sous forme de vignettes
-- Les mots issus du dictionnaire apparaissent en bleu
-- Les mots personnalisés apparaissent en violet
-
-**Colonne droite — définitions**
-- Cliquer sur une vignette affiche immédiatement la définition complète dans la colonne de droite
-- Un bouton **Voir dans le dictionnaire** permet de naviguer vers l'onglet Dictionnaire pour consulter l'entrée originale (disponible uniquement pour les mots issus du dictionnaire)
-
-**Gestion du lexique**
-- **Supprimer** un mot du lexique via le bouton dédié
-- **Ajouter un mot personnalisé** : ouvre un formulaire permettant de saisir un mot et une ou plusieurs définitions libres — utile pour les termes techniques, jargons ou néologismes absents du dictionnaire
-- **Exporter** le lexique vers un fichier `.json` de votre choix
-- **Importer** un lexique préalablement exporté — les mots déjà présents sont conservés, les nouveaux sont fusionnés
+**Add to lexicon**
+- An **Add to lexicon** button is available below each result
+- If the word is already in the lexicon, a message notifies you
 
 ---
 
-## Onglet Quiz
+## Lexicon Tab
 
-Un outil de révision du vocabulaire enregistré dans le lexique.
+The personal lexicon, laid out in two columns.
+
+![Lexicon](assets/readme/lexicon_cap.png)
+
+**Left column - word list**
+- Saved words appear in alphabetical order as clickable tiles
+- Words sourced from the dictionary appear in blue
+- Custom words appear in purple
+
+**Right column - definitions**
+- Clicking a tile immediately displays the full definition in the right column
+- A **View in dictionary** button navigates to the Dictionary tab to show the original entry (available only for dictionary-sourced words)
+
+**Lexicon management**
+- **Remove** a word from the lexicon using the dedicated button
+- **Add a custom word**: opens a form to enter a word and one or more free-form definitions - useful for technical terms, jargon, or neologisms absent from the dictionary
+- **Export** the lexicon to a `.json` file of your choice
+- **Import** a previously exported lexicon - existing words are preserved and new ones are merged in
+
+---
+
+## Quiz Tab
+
+A tool for reviewing the vocabulary saved in your lexicon.
 
 ![Quiz](assets/readme/quiz_cap.png)
 
-**Déroulement**
-- Le quiz ne peut démarrer que si le lexique contient au moins un mot
-- Les mots sont tirés dans un ordre aléatoire en début de session
-- Chaque mot n'apparaît qu'une seule fois par session de quiz
+**How it works**
+- The quiz can only start if the lexicon contains at least one word
+- Words are drawn in a random order at the start of each session
+- Each word appears only once per session
 
-**La carte**
-- La carte affiche d'abord le mot à définir sur fond bleu
-- Le bouton **Voir la réponse** retourne la carte : elle passe sur fond vert et affiche la ou les définitions
-- Le bouton **Voir le mot** permet de revenir à la face initiale
-- Le bouton **Mot suivant** passe au mot suivant de la session
+**The flashcard**
+- The card first displays the word to define on a blue background
+- The **See the answer** button flips the card: it turns green and reveals the definition(s)
+- The **See the word** button flips it back to the word side
+- The **Next word** button moves to the next word in the session
 
-**Fin de session**
-- Lorsque tous les mots ont été parcourus, un écran de fin s'affiche avec le nombre de mots révisés
-- Un bouton **Rejouer** lance une nouvelle session avec un ordre aléatoire différent
+**End of session**
+- When all words have been reviewed, a completion screen shows the number of words covered
+- A **Play again** button starts a new session in a different random order
 
 ---
 
-## Source du dictionnaire
+## Dictionary Source
 
-Le dictionnaire est dérivé de **WiktionaryX**, une ressource lexicale structurée issue du Wiktionnaire français, produite par **Franck Sajous**, ingénieur de recherche CNRS et enseignant en Sciences du Langage à l'Université de Toulouse.
+The dictionary is derived from **WiktionaryX**, a structured lexical resource parsed from the French Wiktionary, produced by **Franck Sajous**, CNRS research engineer and lecturer in Language Sciences at the University of Toulouse.
 
-Source originale : http://redac.univ-tlse2.fr/lexiques/wiktionaryx.html
+Original source: http://redac.univ-tlse2.fr/lexiques/wiktionaryx.html
 
-Le fichier `french_dict.db` est hébergé séparément sur Hugging Face (licence CC BY-SA 4.0) :
+The `french_dict.db` file is hosted separately on Hugging Face (CC BY-SA 4.0 license):
 👉 https://huggingface.co/datasets/Kartmaan/french-dictionary
 
-Lors du premier démarrage de l'application, si aucun dictionnaire n'est détécté dans le dossier `data`, l'utilisateur se voit proposer la possibilité de le télécharger automatiquement depuis la source ou, s'il possède déjà une base de donnée compatible, de l'importer depuis son disque.
-
-![Download](assets/readme/download_cap.png)
 ---
 
-## Licences
+## Licenses
 
-| Composant | Licence |
+| Component | License |
 |---|---|
-| Code source (ce dépôt) | MIT |
-| Base de données `french_dict.db` | CC BY-SA 4.0 (dérivé du Wiktionnaire) |
+| Source code (this repository) | MIT |
+| `french_dict.db` database | CC BY-SA 4.0 (derived from Wiktionary) |
 
 ---
