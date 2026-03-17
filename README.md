@@ -1,6 +1,6 @@
 # Lexika - Offline French Dictionary
 
-Lexika is a Python desktop application for browsing a complete French dictionary locally, building a personal vocabulary lexicon, and reviewing it through an interactive quiz.
+Lexika is a Python desktop application built around an offline French dictionary of nearly 900,000 entries. It offers four integrated tools: a **dictionary** for looking up words and their structured definitions, a personal **lexicon** for saving and managing vocabulary, a **quiz** for reviewing saved words through interactive flashcards, and an **analyzer** for filtering the entire dictionary using multiple combinable linguistic criteria.
 
 ---
 
@@ -11,16 +11,13 @@ Lexika is a Python desktop application for browsing a complete French dictionary
 
 ## Key Features
 
-- **Offline dictionary** with over 800,000 French entries, including conjugated verb forms
-- **Structured definitions**: sub-definitions, usage examples, registers (familiar, literary, archaic...) and domains (music, computing...)
-- **Smart suggestions** when a word is not found, with support for missing accents (`element` → `élément`)
-- **Personal lexicon** to save words you want to remember
-- **Custom words**: add your own definitions for terms not found in the dictionary
-- **Vocabulary quiz** to review the words in your lexicon
-- **Import / Export** the lexicon as a JSON file
-- **Word analyzer** to filter the dictionary with multiple cumulative criteria (length, prefix, suffix, contained letters, letter positions, anagram)
-- **Modern dark interface** built with CustomTkinter
-- **Resizable window** with adaptive layout
+- **Dictionary**: nearly 900,000 French entries, including conjugated verb forms
+
+- **Lexicon**: personal lexicon to save words you want to remember
+
+- **Quiz**: vocabulary quiz to review the words in your lexicon
+
+- **Analyzer**: Word analyzer to filter the dictionary with multiple cumulative criteria
 
 ---
 
