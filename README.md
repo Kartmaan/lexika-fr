@@ -18,6 +18,7 @@ Lexika is a Python desktop application for browsing a complete French dictionary
 - **Custom words**: add your own definitions for terms not found in the dictionary
 - **Vocabulary quiz** to review the words in your lexicon
 - **Import / Export** the lexicon as a JSON file
+- **Word analyzer** to filter the dictionary with multiple cumulative criteria (length, prefix, suffix, contained letters, letter positions, anagram)
 - **Modern dark interface** built with CustomTkinter
 - **Resizable window** with adaptive layout
 
@@ -83,14 +84,15 @@ lexika-fr/
 │   ├── icon.ico             # Windows icon
 │   └── icon.icns            # macOS icon
 ├── core/
-│   ├── dictionnaire.py      # SQLite queries + suggestions
-│   └── lexique.py           # Lexicon JSON management
+│   ├── dictionary.py        # SQLite queries, suggestions, analyzer
+│   └── lexicon.py           # Lexicon JSON management
 ├── ui/
 │   ├── app.py               # Main window and tabs
 │   ├── setup_window.py      # First-launch setup window
-│   ├── tab_dictionnaire.py  # Dictionary tab
-│   ├── tab_lexique.py       # Lexicon tab
-│   └── tab_quiz.py          # Quiz tab
+│   ├── tab_dictionary.py    # Dictionary tab
+│   ├── tab_lexicon.py       # Lexicon tab
+│   ├── tab_quiz.py          # Quiz tab
+│   └── tab_analyzer.py      # Analyzer tab
 └── data/
     ├── french_dict.db       # SQLite database (generated at setup)
     └── lexique.json         # Personal lexicon (auto-created)
@@ -170,6 +172,58 @@ A tool for reviewing the vocabulary saved in your lexicon.
 **End of session**
 - When all words have been reviewed, a completion screen shows the number of words covered
 - A **Play again** button starts a new session in a different random order
+
+---
+
+## Analyzer Tab
+
+A word-filtering tool that queries the full dictionary using multiple cumulative criteria.
+
+![Analyzer](assets/readme/analyzer_cap.png)
+
+**Available filters**
+
+All filters are optional and combinable. The more filters are active, the more precise the results.
+
+| Filter | Description | Example input |
+|---|---|---|
+| **Length** | Exact number of letters | `7` |
+| **Starts with** | The word must begin with this prefix | `gr` |
+| **Ends with** | The word must end with this suffix | `it` |
+| **Contains** | Letters the word must include (continuous or space-separated) | `au` or `a u` |
+| **Not contain** | Letters the word must not include | `bx` or `b x` |
+| **Anagram** | The word must be an exact anagram of these letters | `carte` or `c a r t e` |
+| **Letter at position** | One or more positional constraints (1-indexed) | Pos `2` = `r`, Pos `4` = `t` |
+| **Exclude compound words** | Removes hyphenated and multi-word entries (on by default) | toggle |
+
+**Combining filters**
+
+Filters are applied as cascading SQL conditions — each active filter narrows down the previous results. For example:
+
+```
+Length = 7, Starts with = g, Ends with = it,
+Contains = au, Not contain = b,
+Letter at position: Pos 2 = r, Pos 4 = t
+→ Gratuit, Grutait
+```
+
+**Anagram search**
+
+The anagram filter finds all words in the dictionary that use exactly the same letters as the input, regardless of order. Accented variants are handled automatically — searching `carte` will find `Carte`, `Carté`, `Trace`, `Tracé`, `Acter`, `Caret`, and more.
+
+![Anagram](assets/readme/anagram_cap.png)
+
+Anagram can be combined with other filters: for instance, adding **Starts with = t** to `carte` restricts results to anagrams beginning with 't' (`Trace`, `Tracé`).
+
+**Letter at position**
+
+Click **+ Add position** to add a positional constraint row (position + letter). Multiple rows can be stacked for finer control. Each row can be removed independently.
+
+**Results**
+
+- Results are displayed as clickable tiles, sorted alphabetically
+- Up to **500 words** are shown per search; a notice appears if results are truncated
+- Clicking a tile navigates directly to the **Dictionary tab** to display the word's full definition
 
 ---
 

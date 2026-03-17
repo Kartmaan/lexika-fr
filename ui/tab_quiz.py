@@ -2,6 +2,8 @@
 ui/tab_quiz.py
 --------------
 Quiz tab: word/definition flashcard with color change, session tracking.
+The card adapts its width (65% of the available frame, clamped between
+400 and 1000 px) and scales its fonts proportionally.
 """
 
 import random
@@ -14,17 +16,35 @@ COLOR_TEXT2      = "#A0A0B8"
 COLOR_NEUTRAL    = "#8A8A9A"
 COLOR_ACCENT     = "#4A9EFF"
 
-# Card face colors
-COLOR_CARD_WORD  = "#1A2A4A"   # word side  -> dark blue
-COLOR_CARD_DEF   = "#1A3A2A"   # definition side -> dark green
+COLOR_CARD_WORD  = "#1A2A4A"
+COLOR_CARD_DEF   = "#1A3A2A"
 BORDER_CARD_WORD = "#3A5A8A"
 BORDER_CARD_DEF  = "#3A7A5A"
+
+# Card sizing
+CARD_RATIO   = 0.65    # fraction of the central frame width
+CARD_MIN     = 400     # minimum card width in pixels
+CARD_MAX     = 1000    # maximum card width in pixels
+RESIZE_DELTA = 20      # minimum pixel change before triggering a rebuild
 
 POS_LABELS = {
     "N": "Noun", "V": "Verb", "ADJ": "Adjective", "ADV": "Adverb",
     "PRO": "Pronoun", "DET": "Determiner", "PRE": "Preposition",
     "CON": "Conjunction", "INT": "Interjection", "?": "Undefined",
 }
+
+
+def _card_fonts(card_width: int) -> dict:
+    """
+    Returns a dict of font sizes derived from the card width.
+    Three tiers: small / medium / large.
+    """
+    if card_width < 480:
+        return {"word": 26, "subtitle": 11, "body": 11, "btn": 12, "pos": 9}
+    elif card_width < 700:
+        return {"word": 32, "subtitle": 13, "body": 13, "btn": 14, "pos": 10}
+    else:
+        return {"word": 42, "subtitle": 15, "body": 15, "btn": 16, "pos": 11}
 
 
 class TabQuiz(ctk.CTkFrame):
@@ -34,10 +54,14 @@ class TabQuiz(ctk.CTkFrame):
         super().__init__(parent, fg_color="transparent", **kwargs)
         self.lexicon = lexicon
 
-        self._session_words: list[str] = []   # words remaining in session
-        self._seen_words: list[str] = []       # words already shown
-        self._current_word: str | None = None
-        self._show_word_side: bool = True      # True = word face, False = definition face
+        self._session_words: list[str] = []
+        self._seen_words:    list[str] = []
+        self._current_word:  str | None = None
+        self._show_word_side: bool = True
+
+        # Track card width to avoid unnecessary rebuilds
+        self._card_width: int = 560
+        self._last_frame_width: int = 0
 
         self._build_ui()
 
@@ -61,17 +85,15 @@ class TabQuiz(ctk.CTkFrame):
         ).pack(side="left", padx=16, pady=12)
 
         self._progress_label = ctk.CTkLabel(
-            header,
-            text="",
-            font=ctk.CTkFont(family="Georgia", size=12),
+            header, text="",
+            font=ctk.CTkFont(family="Arial", size=12),
             text_color=COLOR_NEUTRAL,
         )
         self._progress_label.pack(side="left", padx=4, pady=12)
 
         self._btn_restart = ctk.CTkButton(
-            header,
-            text="Restart",
-            font=ctk.CTkFont(family="Georgia", size=13),
+            header, text="Restart",
+            font=ctk.CTkFont(family="Arial", size=13),
             fg_color=COLOR_SURFACE2, hover_color="#3A3A5C",
             text_color=COLOR_ACCENT,
             height=34, corner_radius=0,
@@ -79,13 +101,38 @@ class TabQuiz(ctk.CTkFrame):
         )
         self._btn_restart.pack(side="right", padx=12, pady=10)
 
-        # Central area (card + buttons)
+        # Central area
         self._central_frame = ctk.CTkFrame(self, fg_color="transparent")
         self._central_frame.grid(row=1, column=0, sticky="nsew", padx=20, pady=(0, 20))
         self._central_frame.grid_columnconfigure(0, weight=1)
         self._central_frame.grid_rowconfigure(0, weight=1)
 
+        # Bind resize event to adapt card width
+        self._central_frame.bind("<Configure>", self._on_frame_resize)
+
         self._show_waiting_screen()
+
+    # ------------------------------------------------------------------
+    # Responsive card sizing
+    # ------------------------------------------------------------------
+
+    def _on_frame_resize(self, event):
+        """Reacts to frame resize; rebuilds the card only when needed."""
+        frame_width = event.width
+        if abs(frame_width - self._last_frame_width) < RESIZE_DELTA:
+            return  # change too small — skip rebuild
+
+        self._last_frame_width = frame_width
+        new_width = max(CARD_MIN, min(CARD_MAX, int(frame_width * CARD_RATIO)))
+
+        if abs(new_width - self._card_width) < RESIZE_DELTA:
+            return  # card width unchanged — skip rebuild
+
+        self._card_width = new_width
+
+        # Rebuild the active card if one is displayed
+        if self._current_word:
+            self._show_card()
 
     # ------------------------------------------------------------------
     # Screens
@@ -99,7 +146,9 @@ class TabQuiz(ctk.CTkFrame):
         """Displayed when the lexicon is empty or before starting."""
         self._clear_frame()
 
-        frame = ctk.CTkFrame(self._central_frame, fg_color=COLOR_SURFACE, corner_radius=0)
+        frame = ctk.CTkFrame(
+            self._central_frame, fg_color=COLOR_SURFACE, corner_radius=0
+        )
         frame.grid(row=0, column=0)
 
         is_empty = self.lexicon.is_empty()
@@ -117,14 +166,14 @@ class TabQuiz(ctk.CTkFrame):
         )
         ctk.CTkLabel(
             frame, text=msg,
-            font=ctk.CTkFont(family="Georgia", size=15),
+            font=ctk.CTkFont(family="Arial", size=15),
             text_color=COLOR_TEXT2, justify="center",
         ).pack(pady=(0, 16), padx=48)
 
         if not is_empty:
             ctk.CTkButton(
                 frame, text="Start quiz",
-                font=ctk.CTkFont(family="Georgia", size=15, weight="bold"),
+                font=ctk.CTkFont(family="Arial", size=15, weight="bold"),
                 fg_color=COLOR_ACCENT, hover_color="#3A8EEF",
                 text_color="white", height=44, width=200, corner_radius=0,
                 command=self._start_session,
@@ -135,7 +184,9 @@ class TabQuiz(ctk.CTkFrame):
         self._clear_frame()
         self._progress_label.configure(text="")
 
-        frame = ctk.CTkFrame(self._central_frame, fg_color=COLOR_SURFACE, corner_radius=0)
+        frame = ctk.CTkFrame(
+            self._central_frame, fg_color=COLOR_SURFACE, corner_radius=0
+        )
         frame.grid(row=0, column=0)
 
         ctk.CTkLabel(
@@ -147,20 +198,20 @@ class TabQuiz(ctk.CTkFrame):
         ctk.CTkLabel(
             frame,
             text=f"You have reviewed all\n{len(self._seen_words)} words in your lexicon.",
-            font=ctk.CTkFont(family="Georgia", size=15),
+            font=ctk.CTkFont(family="Arial", size=15),
             text_color=COLOR_TEXT, justify="center",
         ).pack(pady=(0, 16))
 
         ctk.CTkButton(
             frame, text="Play again",
-            font=ctk.CTkFont(family="Georgia", size=15, weight="bold"),
+            font=ctk.CTkFont(family="Arial", size=15, weight="bold"),
             fg_color=COLOR_ACCENT, hover_color="#3A8EEF",
             text_color="white", height=44, width=160, corner_radius=0,
             command=self._start_session,
         ).pack(pady=(0, 32))
 
     def _show_card(self):
-        """Displays the flashcard for the current word."""
+        """Displays the adaptive flashcard for the current word."""
         self._clear_frame()
 
         entry = self.lexicon.get(self._current_word)
@@ -168,8 +219,14 @@ class TabQuiz(ctk.CTkFrame):
             self._next_word()
             return
 
+        fonts = _card_fonts(self._card_width)
+        wrap  = max(200, self._card_width - 120)   # wraplength for definition text
+
+        # Center the card by applying symmetric horizontal padding to the wrapper.
+        # The card itself fills the wrapper (sticky="ew") and grows freely in height.
+        margin = max(0, (self._last_frame_width - self._card_width) // 2)
         wrapper = ctk.CTkFrame(self._central_frame, fg_color="transparent")
-        wrapper.grid(row=0, column=0)
+        wrapper.grid(row=0, column=0, sticky="ew", padx=(margin, margin))
         wrapper.grid_columnconfigure(0, weight=1)
 
         # --- Card ---
@@ -179,59 +236,76 @@ class TabQuiz(ctk.CTkFrame):
         self._card = ctk.CTkFrame(
             wrapper,
             fg_color=card_color, corner_radius=0,
-            border_width=2, border_color=card_border, width=560,
+            border_width=2, border_color=card_border,
         )
-        self._card.grid(row=0, column=0, pady=(0, 24))
+        # sticky="ew" lets the card fill the wrapper width;
+        # no grid_propagate(False) so height grows freely with content.
+        self._card.grid(row=0, column=0, pady=(0, 24), sticky="ew")
         self._card.grid_columnconfigure(0, weight=1)
 
         if self._show_word_side:
-            self._build_word_face(self._card)
+            self._build_word_face(self._card, fonts)
         else:
-            self._build_definition_face(self._card, entry)
+            self._build_definition_face(self._card, entry, fonts, wrap)
 
         # --- Next word button ---
-        self._btn_next = ctk.CTkButton(
+        btn_width = max(160, min(240, self._card_width // 3))
+        ctk.CTkButton(
             wrapper, text="Next word  ->",
-            font=ctk.CTkFont(family="Georgia", size=14, weight="bold"),
+            font=ctk.CTkFont(family="Arial", size=fonts["btn"], weight="bold"),
             fg_color=COLOR_SURFACE, hover_color="#3A3A5C",
             border_color="#3A3A5C", border_width=1,
-            text_color=COLOR_TEXT, height=42, width=200, corner_radius=0,
+            text_color=COLOR_TEXT,
+            height=max(36, fonts["btn"] * 3),
+            width=btn_width,
+            corner_radius=0,
             command=self._next_word,
-        )
-        self._btn_next.grid(row=1, column=0)
+        ).grid(row=1, column=0)
 
-    def _build_word_face(self, parent):
+    # ------------------------------------------------------------------
+    # Card faces
+    # ------------------------------------------------------------------
+
+    def _build_word_face(self, parent, fonts: dict):
         """Word side: shows the word and a 'See the answer' button."""
+        pad = max(20, self._card_width // 16)
+
         ctk.CTkLabel(
             parent, text="What is the definition of...",
-            font=ctk.CTkFont(family="Georgia", size=13, slant="italic"),
+            font=ctk.CTkFont(family="Arial", size=fonts["subtitle"], slant="italic"),
             text_color="#7A9ABE",
-        ).grid(row=0, column=0, pady=(28, 4), padx=40)
+        ).grid(row=0, column=0, pady=(pad, 4), padx=pad)
 
         ctk.CTkLabel(
             parent, text=self._current_word.capitalize(),
-            font=ctk.CTkFont(family="Georgia", size=36, weight="bold"),
+            font=ctk.CTkFont(family="Arial", size=fonts["word"], weight="bold"),
             text_color="#A8D0FF",
-        ).grid(row=1, column=0, pady=(4, 28), padx=40)
+        ).grid(row=1, column=0, pady=(4, pad), padx=pad)
 
+        btn_w = max(140, self._card_width // 4)
         ctk.CTkButton(
             parent, text="See the answer",
-            font=ctk.CTkFont(family="Georgia", size=14, weight="bold"),
+            font=ctk.CTkFont(family="Arial", size=fonts["btn"], weight="bold"),
             fg_color="#2A4A7A", hover_color="#3A5A8A",
-            text_color="#A8D0FF", height=40, width=180, corner_radius=0,
+            text_color="#A8D0FF",
+            height=max(36, fonts["btn"] * 3),
+            width=btn_w,
+            corner_radius=0,
             command=self._flip_card,
-        ).grid(row=2, column=0, pady=(0, 28))
+        ).grid(row=2, column=0, pady=(0, pad))
 
-    def _build_definition_face(self, parent, entry: dict):
+    def _build_definition_face(self, parent, entry: dict, fonts: dict, wrap: int):
         """Definition side: shows definitions and a 'See the word' button."""
+        pad = max(16, self._card_width // 18)
+
         ctk.CTkLabel(
             parent, text=self._current_word.capitalize(),
-            font=ctk.CTkFont(family="Georgia", size=20, weight="bold"),
+            font=ctk.CTkFont(family="Arial", size=fonts["word"] // 2 + 8, weight="bold"),
             text_color="#80C8A0",
-        ).grid(row=0, column=0, pady=(24, 4), padx=40, sticky="w")
+        ).grid(row=0, column=0, pady=(pad, 4), padx=pad, sticky="w")
 
         ctk.CTkFrame(parent, height=1, fg_color="#3A7A5A").grid(
-            row=1, column=0, sticky="ew", padx=24, pady=(0, 8)
+            row=1, column=0, sticky="ew", padx=pad, pady=(0, 8)
         )
 
         row = 2
@@ -240,45 +314,49 @@ class TabQuiz(ctk.CTkFrame):
 
             ctk.CTkLabel(
                 parent, text=f"  {pos_label}  ",
-                font=ctk.CTkFont(family="Georgia", size=10, weight="bold"),
+                font=ctk.CTkFont(family="Arial", size=fonts["pos"], weight="bold"),
                 fg_color="#2A5A3A", text_color="#80C8A0",
                 corner_radius=0, height=20,
-            ).grid(row=row, column=0, sticky="w", padx=24, pady=(4, 2))
+            ).grid(row=row, column=0, sticky="w", padx=pad, pady=(4, 2))
             row += 1
 
             for i, defn in enumerate(lexeme.get("definitions", [])[:3], 1):
                 gloss = defn.get("gloss", "")
                 def_row = ctk.CTkFrame(parent, fg_color="transparent")
-                def_row.grid(row=row, column=0, sticky="ew", padx=24, pady=(2, 2))
+                def_row.grid(row=row, column=0, sticky="ew", padx=pad, pady=(2, 2))
                 def_row.grid_columnconfigure(1, weight=1)
 
                 ctk.CTkLabel(
                     def_row, text=f"{i}.",
-                    font=ctk.CTkFont(family="Georgia", size=13, weight="bold"),
+                    font=ctk.CTkFont(family="Arial", size=fonts["body"], weight="bold"),
                     text_color="#80C8A0", width=24, anchor="ne",
                 ).grid(row=0, column=0, sticky="ne", padx=(0, 6))
 
                 ctk.CTkLabel(
                     def_row, text=gloss,
-                    font=ctk.CTkFont(family="Georgia", size=13),
-                    text_color="#C8EED8", wraplength=440, anchor="nw", justify="left",
+                    font=ctk.CTkFont(family="Arial", size=fonts["body"]),
+                    text_color="#C8EED8",
+                    wraplength=wrap, anchor="nw", justify="left",
                 ).grid(row=0, column=1, sticky="nw")
                 row += 1
 
+        btn_w = max(140, self._card_width // 4)
         ctk.CTkButton(
             parent, text="See the word",
-            font=ctk.CTkFont(family="Georgia", size=14, weight="bold"),
+            font=ctk.CTkFont(family="Arial", size=fonts["btn"], weight="bold"),
             fg_color="#2A5A3A", hover_color="#3A6A4A",
-            text_color="#80C8A0", height=40, width=180, corner_radius=0,
+            text_color="#80C8A0",
+            height=max(36, fonts["btn"] * 3),
+            width=btn_w,
+            corner_radius=0,
             command=self._flip_card,
-        ).grid(row=row, column=0, pady=(12, 24))
+        ).grid(row=row, column=0, pady=(12, pad))
 
     # ------------------------------------------------------------------
     # Session logic
     # ------------------------------------------------------------------
 
     def _start_session(self):
-        """Initializes a new quiz session."""
         if self.lexicon.is_empty():
             self._show_waiting_screen()
             return
@@ -290,7 +368,6 @@ class TabQuiz(ctk.CTkFrame):
         self._next_word()
 
     def _next_word(self):
-        """Moves to the next word in the session."""
         if not self._session_words:
             self._show_session_end()
             return
@@ -302,7 +379,6 @@ class TabQuiz(ctk.CTkFrame):
         self._show_card()
 
     def _flip_card(self):
-        """Toggles between word side and definition side."""
         self._show_word_side = not self._show_word_side
         self._show_card()
 

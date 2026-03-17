@@ -13,6 +13,7 @@ from core import Dictionary, Lexicon
 from ui.tab_dictionary import TabDictionary
 from ui.tab_lexicon import TabLexicon
 from ui.tab_quiz import TabQuiz
+from ui.tab_analyzer import TabAnalyzer
 
 # Assets folder at the project root
 ASSETS_DIR = Path(__file__).parent.parent / "assets"
@@ -141,8 +142,9 @@ class App(ctk.CTk):
         self._tabview.add("Dictionary")
         self._tabview.add("Lexicon")
         self._tabview.add("Quiz")
+        self._tabview.add("Analyzer")
 
-        for name in ["Dictionary", "Lexicon", "Quiz"]:
+        for name in ["Dictionary", "Lexicon", "Quiz", "Analyzer"]:
             self._tabview._segmented_button._buttons_dict[name].configure(
                 width=280, height=44
             )
@@ -170,6 +172,13 @@ class App(ctk.CTk):
         )
         self._tab_quiz.grid(row=0, column=0, sticky="nsew")
 
+        self._tab_analyzer = TabAnalyzer(
+            self._tabview.tab("Analyzer"),
+            dictionary=self.dictionary,
+            on_word_click=self._navigate_to_dict_word,
+        )
+        self._tab_analyzer.grid(row=0, column=0, sticky="nsew")
+
         # Cross-tab refresh on tab change
         self._tabview.configure(command=self._on_tab_change)
 
@@ -191,6 +200,15 @@ class App(ctk.CTk):
         in the Dictionary tab.
         """
         self._tab_dict.display_from_lexicon(word, entry)
+        self._tabview.set("Dictionary")
+
+    def _navigate_to_dict_word(self, word: str):
+        """
+        Callback triggered from the Analyzer tab.
+        Searches the word directly in the Dictionary tab.
+        """
+        self._tab_dict._search_var.set(word)
+        self._tab_dict._run_search()
         self._tabview.set("Dictionary")
 
     # ------------------------------------------------------------------

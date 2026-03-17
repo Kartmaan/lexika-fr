@@ -19,7 +19,6 @@ def _normalize(text: str) -> str:
         if unicodedata.category(c) != 'Mn'
     )
 
-
 # Accented variants for each base letter (used in indexed LIKE queries)
 _ACCENT_VARIANTS = {
     'a': 'àâä',
@@ -29,7 +28,6 @@ _ACCENT_VARIANTS = {
     'u': 'ùûü',
     'c': 'ç',
 }
-
 
 class Dictionary:
     """
@@ -43,9 +41,7 @@ class Dictionary:
     def __init__(self, db_path: str | Path):
         self.db_path = Path(db_path)
         if not self.db_path.exists():
-            raise FileNotFoundError(
-                f"Database not found: {self.db_path}"
-            )
+            raise FileNotFoundError(f"Database not found: {self.db_path}")
         self._conn = sqlite3.connect(str(self.db_path), check_same_thread=False)
         self._conn.row_factory = sqlite3.Row
 
@@ -68,7 +64,10 @@ class Dictionary:
         rows = cursor.fetchall()
         if not rows:
             return None
-        return [{"pos": row["pos"], "definitions": json.loads(row["definitions"])} for row in rows]
+        return [
+            {"pos": row["pos"], "definitions": json.loads(row["definitions"])}
+            for row in rows
+        ]
 
     # ------------------------------------------------------------------
     # Similar word suggestions (accent-aware)
@@ -77,12 +76,7 @@ class Dictionary:
     def suggest(self, word: str, n: int = 8) -> list[str]:
         """
         Returns up to n words close to the user's input.
-
-        Handles missing accents: 'element' → ['élément', ...]
-        Strategy:
-          1. Normalize input (strip accents)
-          2. Build accent-aware LIKE prefixes (indexed queries)
-          3. Rank candidates with difflib on normalized forms
+        Handles missing accents: 'element' -> ['élément', ...]
         """
         word = word.strip().lower()
         if not word:
@@ -129,10 +123,8 @@ class Dictionary:
         close_norm = difflib.get_close_matches(
             word_norm, list(norm_to_orig.keys()), n=n * 2, cutoff=0.65
         )
-
         results = [norm_to_orig[p] for p in close_norm if p in norm_to_orig]
 
-        # Fallback: return first candidates if difflib finds nothing
         if not results and candidates:
             results = candidates[:n]
 
@@ -141,7 +133,7 @@ class Dictionary:
     def _prefixes_with_variants(self, base: str, length: int) -> list[str]:
         """
         Generates LIKE prefixes including accented variants.
-        e.g. 'ele' → ['ele', 'éle', 'èle', 'êle', 'ële']
+        e.g. 'ele' -> ['ele', 'éle', 'èle', 'êle', 'ële']
         """
         prefix = base[:length]
         variants: set[str] = {prefix}
@@ -150,6 +142,143 @@ class Dictionary:
                 for accented in _ACCENT_VARIANTS[letter]:
                     variants.add(prefix[:i] + accented + prefix[i + 1:])
         return list(variants)
+
+    # ------------------------------------------------------------------
+    # Analyzer: multi-criteria filtering
+    # ------------------------------------------------------------------
+
+    def analyze(
+        self,
+        length:      int | None       = None,
+        start_with:  str | None       = None,
+        end_with:    str | None       = None,
+        contains:    list[str]        = None,
+        not_contain: list[str]        = None,
+        nth_letters: list[list]       = None,
+        anagram:     list[str] | None = None,
+        no_comp:     bool             = True,
+        limit:       int              = 500,
+    ) -> tuple[list[str], bool]:
+        """
+        Filters the dictionary using cascading SQL conditions,
+        with a Python-side post-filter for anagram matching.
+
+        Parameters
+        ----------
+        length      : exact word length in characters
+        start_with  : prefix the word must start with
+        end_with    : suffix the word must end with
+        contains    : list of letters the word must contain (each at least once)
+        not_contain : list of letters the word must NOT contain
+        nth_letters : list of [position, letter] pairs (1-indexed)
+                      e.g. [[2, 'r'], [4, 't']] -> 2nd letter is 'r', 4th is 't'
+        anagram     : list of letters; the word must be an exact anagram of them
+                      (implies length = len(anagram) if length is not set)
+        no_comp     : if True (default), excludes compound words (space or hyphen)
+        limit       : maximum number of results returned (default 500)
+
+        Returns
+        -------
+        (words: list[str], truncated: bool)
+            words      : matching word forms, sorted alphabetically
+            truncated  : True if results were cut off at the limit
+        """
+        conditions = [] # SQL WHERE conditions
+        params = [] # SQL parameters for the conditions
+
+        # Anagram: derive length from letters if not explicitly set
+        anagram_sorted = None
+        if anagram:
+            letters = [_normalize(l).lower() for l in anagram if l.strip()]
+            anagram_sorted = sorted(letters)
+            if length is None:
+                length = len(letters)
+
+        # --- Build SQL WHERE clauses ---
+
+        if length is not None:
+            conditions.append("LENGTH(forme) = ?")
+            params.append(length)
+
+        if start_with:
+            conditions.append("forme LIKE ?")
+            params.append(f"{start_with.lower()}%")
+
+        if end_with:
+            conditions.append("forme LIKE ?")
+            params.append(f"%{end_with.lower()}")
+
+        if contains:
+            for letter in contains:
+                if letter.strip():
+                    conditions.append("forme LIKE ?")
+                    params.append(f"%{letter.lower()}%")
+
+        if not_contain:
+            for letter in not_contain:
+                if letter.strip():
+                    conditions.append("forme NOT LIKE ?")
+                    params.append(f"%{letter.lower()}%")
+
+        if nth_letters:
+            for pair in nth_letters:
+                if len(pair) == 2:
+                    pos, letter = pair
+                    try:
+                        pos = int(pos)
+                        letter = str(letter).lower().strip()
+                        if pos >= 1 and letter:
+                            # SQLite SUBSTR is 1-indexed
+                            conditions.append("SUBSTR(forme, ?, 1) = ?")
+                            params.extend([pos, letter])
+                    except (ValueError, TypeError):
+                        pass
+
+        if no_comp:
+            # Exclude words containing a space or a hyphen
+            conditions.append("forme NOT LIKE '% %'")
+            conditions.append("forme NOT LIKE '%-%'")
+
+        # Require at least one active condition to prevent full-table scans
+        if not conditions:
+            return [], False
+
+        where_clause = " AND ".join(conditions)
+
+        cursor = self._conn.cursor()
+
+        if anagram_sorted:
+            # When searching for anagrams, LENGTH(forme) already bounds the
+            # result set tightly enough. Removing the SQL LIMIT ensures we
+            # never miss words that appear late in the alphabet (e.g. 'niche'
+            # when searching anagrams of 'chien').
+            sql = (
+                f"SELECT DISTINCT forme FROM mots "
+                f"WHERE {where_clause} "
+                f"ORDER BY forme"
+            )
+            cursor.execute(sql, params)
+        else:
+            # For non-anagram searches apply the limit directly in SQL.
+            sql = (
+                f"SELECT DISTINCT forme FROM mots "
+                f"WHERE {where_clause} "
+                f"ORDER BY forme LIMIT ?"
+            )
+            params.append(limit + 1)
+            cursor.execute(sql, params)
+
+        words = [row["forme"] for row in cursor.fetchall()]
+
+        # Python post-filter: anagram check
+        if anagram_sorted:
+            words = [
+                w for w in words
+                if sorted(_normalize(w).lower()) == anagram_sorted
+            ]
+
+        truncated = len(words) > limit
+        return sorted(words[:limit]), truncated
 
     # ------------------------------------------------------------------
     # Utilities

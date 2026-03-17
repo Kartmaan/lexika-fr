@@ -342,6 +342,6 @@ class SetupWindow(ctk.CTk):
         from ui.app import App
         app = App(
             db_path=DB_DEST,
-            lexicon_path=DB_DEST.parent / "lexique.json"
+            lexicon_path=DB_DEST.parent / "lexicon.json"
         )
         app.mainloop()

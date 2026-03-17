@@ -384,12 +384,11 @@ class TabDictionary(ctk.CTkFrame):
         ctk.CTkLabel(
             self._def_frame,
             text="Enter a word in the search field above.",
-            font=ctk.CTkFont(family="Georgia", size=14),
+            font=ctk.CTkFont(family="Arial", size=14),
             text_color=COLOR_NEUTRAL,
-            wraplength=600,
-            anchor="w",
-            justify="left",
-        ).grid(row=0, column=0, sticky="w", padx=16, pady=20)
+            anchor="center",
+            justify="center",
+        ).grid(row=0, column=0, sticky="ew", padx=16, pady=(60, 20))
 
     def _show_not_found(self, word: str):
         self._title_label.configure(text=f"'{word}' not found")
