@@ -9,8 +9,14 @@ import json
 import sqlite3
 import difflib
 import unicodedata
+from collections import Counter
 from pathlib import Path
 from typing import Optional
+
+# Minimum word length for partial anagram results.
+# Words shorter than this will never appear in sub-anagram searches.
+# Change this value to adjust the minimum length globally.
+MIN_PARTIAL_ANAGRAM_LENGTH = 3
 
 def _normalize(text: str) -> str:
     """Removes accents from a string for comparison purposes."""
@@ -149,15 +155,16 @@ class Dictionary:
 
     def analyze(
         self,
-        length:      int | None       = None,
-        start_with:  str | None       = None,
-        end_with:    str | None       = None,
-        contains:    list[str]        = None,
-        not_contain: list[str]        = None,
-        nth_letters: list[list]       = None,
-        anagram:     list[str] | None = None,
-        no_comp:     bool             = True,
-        limit:       int              = 500,
+        length:          int | None       = None,
+        start_with:      str | None       = None,
+        end_with:        str | None       = None,
+        contains:        list[str]        = None,
+        not_contain:     list[str]        = None,
+        nth_letters:     list[list]       = None,
+        anagram:         list[str] | None = None,
+        partial_anagram: bool             = False,
+        no_comp:         bool             = True,
+        limit:           int              = 500,
     ) -> tuple[list[str], bool]:
         """
         Filters the dictionary using cascading SQL conditions,
@@ -165,17 +172,20 @@ class Dictionary:
 
         Parameters
         ----------
-        length      : exact word length in characters
-        start_with  : prefix the word must start with
-        end_with    : suffix the word must end with
-        contains    : list of letters the word must contain (each at least once)
-        not_contain : list of letters the word must NOT contain
-        nth_letters : list of [position, letter] pairs (1-indexed)
-                      e.g. [[2, 'r'], [4, 't']] -> 2nd letter is 'r', 4th is 't'
-        anagram     : list of letters; the word must be an exact anagram of them
-                      (implies length = len(anagram) if length is not set)
-        no_comp     : if True (default), excludes compound words (space or hyphen)
-        limit       : maximum number of results returned (default 500)
+        length          : exact word length in characters
+        start_with      : prefix the word must start with
+        end_with        : suffix the word must end with
+        contains        : list of letters the word must contain (each at least once)
+        not_contain     : list of letters the word must NOT contain
+        nth_letters     : list of [position, letter] pairs (1-indexed)
+                          e.g. [[2, 'r'], [4, 't']] -> 2nd letter is 'r', 4th is 't'
+        anagram         : list of letters for anagram matching
+        partial_anagram : if True, also return words that use a SUBSET of the
+                          anagram letters (sub-anagrams), e.g. 'carte' -> 'car', 'rat'
+                          Words shorter than MIN_PARTIAL_ANAGRAM_LENGTH are excluded.
+                          Ignored when anagram is None.
+        no_comp         : if True (default), excludes compound words (space or hyphen)
+        limit           : maximum number of results returned (default 500)
 
         Returns
         -------
@@ -186,19 +196,39 @@ class Dictionary:
         conditions = [] # SQL WHERE conditions
         params = [] # SQL parameters for the conditions
 
-        # Anagram: derive length from letters if not explicitly set
-        anagram_sorted = None
+        # Anagram setup
+        anagram_sorted  = None
+        anagram_counter = None
         if anagram:
             letters = [_normalize(l).lower() for l in anagram if l.strip()]
-            anagram_sorted = sorted(letters)
-            if length is None:
-                length = len(letters)
+            anagram_sorted  = sorted(letters)
+            anagram_counter = Counter(letters)
+
+            if partial_anagram:
+                # Partial mode: words can use any subset of the pool.
+                # SQL bounds: length >= MIN_PARTIAL_ANAGRAM_LENGTH
+                #             length <= len(pool)  (can't use more letters than available)
+                # The exact Python check replaces the sorted() equality test.
+                if length is None:
+                    # Add both bounds as SQL conditions
+                    pass   # handled below after length block
+            else:
+                # Perfect anagram: word must use ALL letters exactly once.
+                if length is None:
+                    length = len(letters)
 
         # --- Build SQL WHERE clauses ---
 
         if length is not None:
             conditions.append("LENGTH(forme) = ?")
             params.append(length)
+        elif anagram and partial_anagram:
+            # Partial anagram: bound by [MIN, pool_size] instead of exact length
+            pool_size = len([l for l in anagram if l.strip()])
+            conditions.append("LENGTH(forme) >= ?")
+            params.append(MIN_PARTIAL_ANAGRAM_LENGTH)
+            conditions.append("LENGTH(forme) <= ?")
+            params.append(pool_size)
 
         if start_with:
             conditions.append("forme LIKE ?")
@@ -272,10 +302,22 @@ class Dictionary:
 
         # Python post-filter: anagram check
         if anagram_sorted:
-            words = [
-                w for w in words
-                if sorted(_normalize(w).lower()) == anagram_sorted
-            ]
+            if partial_anagram:
+                # Sub-anagram: every letter of the word must be available
+                # in the pool (with correct multiplicity).
+                def _is_sub_anagram(word: str) -> bool:
+                    word_counter = Counter(_normalize(word).lower())
+                    for letter, count in word_counter.items():
+                        if anagram_counter.get(letter, 0) < count:
+                            return False
+                    return True
+                words = [w for w in words if _is_sub_anagram(w)]
+            else:
+                # Perfect anagram: sorted letters must match exactly.
+                words = [
+                    w for w in words
+                    if sorted(_normalize(w).lower()) == anagram_sorted
+                ]
 
         truncated = len(words) > limit
         return sorted(words[:limit]), truncated

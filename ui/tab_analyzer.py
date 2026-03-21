@@ -211,6 +211,38 @@ class TabAnalyzer(ctk.CTkFrame):
         self._var_anagram = StringVar()
         row = entry_field(self._var_anagram, "e.g.  carte  or  c a r t e", row)
 
+        # Partial anagram switch
+        self._var_partial_anagram = BooleanVar(value=False)
+
+        partial_row = ctk.CTkFrame(parent, fg_color="transparent")
+        partial_row.grid(row=row, column=0, sticky="ew", padx=14, pady=(0, 2))
+        partial_row.grid_columnconfigure(0, weight=1)
+        row += 1
+
+        ctk.CTkLabel(
+            partial_row,
+            text="Allow partial anagrams",
+            font=ctk.CTkFont(family="Arial", size=11),
+            text_color=COLOR_TEXT2, anchor="w",
+        ).grid(row=0, column=0, sticky="w")
+
+        ctk.CTkSwitch(
+            partial_row,
+            text="",
+            variable=self._var_partial_anagram,
+            onvalue=True, offvalue=False,
+            progress_color=COLOR_ACCENT,
+            width=40,
+        ).grid(row=0, column=1, sticky="e")
+
+        ctk.CTkLabel(
+            parent,
+            text="(words using any subset of the letters,  min. 3 letters)",
+            font=ctk.CTkFont(family="Arial", size=10, slant="italic"),
+            text_color=COLOR_NEUTRAL, anchor="w",
+        ).grid(row=row, column=0, sticky="w", padx=14, pady=(0, 6))
+        row += 1
+
         # --- Nth letters ---
         row = section("LETTER AT POSITION  (pos + letter)", row)
 
@@ -415,6 +447,8 @@ class TabAnalyzer(ctk.CTkFrame):
         raw_ag = self._var_anagram.get().replace(" ", "").lower()
         if raw_ag:
             params["anagram"] = [l for l in raw_ag if l.isalpha()]
+            if self._var_partial_anagram.get():
+                params["partial_anagram"] = True
 
         # Nth letters
         nth = []
@@ -542,6 +576,7 @@ class TabAnalyzer(ctk.CTkFrame):
         self._var_not_contain.set("")
         self._var_anagram.set("")
         self._var_no_comp.set(True)
+        self._var_partial_anagram.set(False)
 
         # Clear nth rows and add one fresh empty row
         for _, _, frame in self._nth_rows:

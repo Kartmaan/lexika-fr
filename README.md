@@ -195,7 +195,7 @@ All filters are optional and combinable. The more filters are active, the more p
 
 **Combining filters**
 
-Filters are applied as cascading SQL conditions — each active filter narrows down the previous results. For example:
+Filters are applied as cascading SQL conditions, each active filter narrows down the previous results. For example:
 
 ```
 Length = 7, Starts with = g, Ends with = it,
@@ -206,11 +206,19 @@ Letter at position: Pos 2 = r, Pos 4 = t
 
 **Anagram search**
 
-The anagram filter finds all words in the dictionary that use exactly the same letters as the input, regardless of order. Accented variants are handled automatically — searching `carte` will find `Carte`, `Carté`, `Trace`, `Tracé`, `Acter`, `Caret`, and more.
+**Perfect anagrams**
+
+The anagram filter finds all words in the dictionary that use exactly the same letters as the input, regardless of order. Accented variants are handled automatically, searching `carte` will find `Carte`, `Carté`, `Trace`, `Tracé`, `Acter`, `Caret`, and more.
 
 ![Anagram](assets/readme/anagram_cap.png)
 
-Anagram can be combined with other filters: for instance, adding **Starts with = t** to `carte` restricts results to anagrams beginning with 't' (`Trace`, `Tracé`).
+**Partial anagrams**
+
+When enabled, the anagram search no longer requires words to use all the provided letters, it instead returns any word that can be formed using a subset of them. For example, searching for "carte" with partial anagrams enabled, the results are expanded to include shorter words such as "Car", "Arc", "Rat" or "Acte", as long as each letter used appears in the original pool and isn't used more times than it's available. Words shorter than three letters are excluded from partial results. This mode is particularly useful for board game players, such as Scrabble, who may not always be able to place all their tiles at once.
+
+![Anagram_partial](assets/readme/anagram_partial_cap.png)
+
+> Anagram can be combined with other filters: for instance, adding **Starts with = t** to `carte` restricts results to anagrams beginning with 't' (`Trace`, `Tracé`).
 
 **Letter at position**
 
@@ -224,14 +232,37 @@ Click **+ Add position** to add a positional constraint row (position + letter).
 
 ---
 
+## Technical Notes - Why SQLite?
+
+The dictionary is stored as a **SQLite database** (`.db`) rather than a flat file format such as CSV, JSON, or Parquet. This choice was driven by the specific requirements of a desktop dictionary application handling nearly 900,000 entries.
+
+**Instant lookups via B-tree indexing**
+
+SQLite maintains a B-tree index on the `forme` column, meaning an exact word search across 900,000 entries completes in under a millisecond, regardless of the position of the word in the alphabet. A flat file would require a full scan on every keystroke.
+
+**Cascading filters without loading data into memory**
+
+The Analyzer tab runs multi-criteria queries (length, prefix, suffix, contained letters, positional constraints) entirely within SQLite's query engine. Each active filter is translated into a SQL `WHERE` clause, and only the matching rows are ever read from disk. Equivalent operations on a Pandas DataFrame loaded from a Parquet or CSV file would iterate over all rows in Python, taking several seconds per query on this dataset size.
+
+**Zero memory footprint at startup**
+
+SQLite is a lazy reader: the application connects to the file but loads nothing into RAM until a query is made. The 270 MB database occupies virtually no memory at rest. A JSON or Parquet approach would require loading the entire dataset into memory on startup, adding 20–270 MB to the application's footprint depending on the format.
+
+**Trade-offs acknowledged**
+
+SQLite is not the optimal format for every use case. For machine learning pipelines, where columnar access, compression, and integration with frameworks like Pandas, PyArrow, or Hugging Face `datasets` matter, a **Parquet** export of the same data would be more appropriate.
+
+---
+
 ## Dictionary Source
 
 The dictionary is derived from **WiktionaryX**, a structured lexical resource parsed from the French Wiktionary, produced by **Franck Sajous**, CNRS research engineer and lecturer in Language Sciences at the University of Toulouse.
 
 Original source: http://redac.univ-tlse2.fr/lexiques/wiktionaryx.html
 
-The `french_dict.db` file is hosted separately on Hugging Face (CC BY-SA 4.0 license):
-👉 https://huggingface.co/datasets/Kartmaan/french-dictionary
+The `french_dict.db` file is hosted separately on Hugging Face (CC BY-SA 4.0 license): https://huggingface.co/datasets/Kartmaan/french-dictionary
+
+> The Hugging Face repository also contains this same database in `.parquet` format, which is more useful for machine learning and data science projects.
 
 ---
 
