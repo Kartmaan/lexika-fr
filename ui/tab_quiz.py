@@ -10,30 +10,11 @@ import random
 import customtkinter as ctk
 from core.config import FONTS, COLORS, POS_LABELS, GENDER_LABELS, GENDER_COLORS
 
-COLOR_SURFACE    = "#1E1E2E"
-COLOR_SURFACE2   = "#2A2A3E"
-COLOR_TEXT       = "#E8E8F0"
-COLOR_TEXT2      = "#A0A0B8"
-COLOR_NEUTRAL    = "#8A8A9A"
-COLOR_ACCENT     = "#4A9EFF"
-
-COLOR_CARD_WORD  = "#1A2A4A"
-COLOR_CARD_DEF   = "#1A3A2A"
-BORDER_CARD_WORD = "#3A5A8A"
-BORDER_CARD_DEF  = "#3A7A5A"
-
 # Card sizing
 CARD_RATIO   = 0.65    # fraction of the central frame width
 CARD_MIN     = 400     # minimum card width in pixels
 CARD_MAX     = 1000    # maximum card width in pixels
 RESIZE_DELTA = 20      # minimum pixel change before triggering a rebuild
-
-"""POS_LABELS = {
-    "N": "Noun", "V": "Verb", "ADJ": "Adjective", "ADV": "Adverb",
-    "PRO": "Pronoun", "DET": "Determiner", "PRE": "Preposition",
-    "CON": "Conjunction", "INT": "Interjection", "?": "Undefined",
-}"""
-
 
 def _card_fonts(card_width: int) -> dict:
     """
@@ -78,28 +59,28 @@ class TabQuiz(ctk.CTkFrame):
         self.grid_rowconfigure(1, weight=1)
 
         # Header
-        header = ctk.CTkFrame(self, fg_color=COLOR_SURFACE, corner_radius=0)
+        header = ctk.CTkFrame(self, fg_color=COLORS["SURFACE"], corner_radius=0)
         header.grid(row=0, column=0, sticky="ew", padx=20, pady=(20, 10))
 
         ctk.CTkLabel(
             header,
             text="Vocabulary Quiz",
             font=ctk.CTkFont(family="Georgia", size=18, weight="bold"),
-            text_color=COLOR_TEXT,
+            text_color=COLORS["TEXT"],
         ).pack(side="left", padx=16, pady=12)
 
         self._progress_label = ctk.CTkLabel(
             header, text="",
             font=ctk.CTkFont(family=FONTS["QUIZ_LABEL"][0], size=FONTS["QUIZ_LABEL"][1]),
-            text_color=COLOR_NEUTRAL,
+            text_color=COLORS["NEUTRAL"],
         )
         self._progress_label.pack(side="left", padx=4, pady=12)
 
         self._btn_restart = ctk.CTkButton(
             header, text="Restart",
             font=ctk.CTkFont(family=FONTS["BTN"][0], size=FONTS["BTN"][1]),
-            fg_color=COLOR_SURFACE2, hover_color="#3A3A5C",
-            text_color=COLOR_ACCENT,
+            fg_color=COLORS["SURFACE2"], hover_color="#3A3A5C",
+            text_color=COLORS["ACCENT"],
             height=34, corner_radius=0,
             command=self._start_session,
         )
@@ -151,7 +132,7 @@ class TabQuiz(ctk.CTkFrame):
         self._clear_frame()
 
         frame = ctk.CTkFrame(
-            self._central_frame, fg_color=COLOR_SURFACE, corner_radius=0
+            self._central_frame, fg_color=COLORS["SURFACE"], corner_radius=0
         )
         frame.grid(row=0, column=0)
 
@@ -160,7 +141,7 @@ class TabQuiz(ctk.CTkFrame):
         ctk.CTkLabel(
             frame, text="?",
             font=ctk.CTkFont(size=48),
-            text_color=COLOR_TEXT,
+            text_color=COLORS["TEXT"],
         ).pack(pady=(32, 8), padx=48)
 
         msg = (
@@ -171,14 +152,14 @@ class TabQuiz(ctk.CTkFrame):
         ctk.CTkLabel(
             frame, text=msg,
             font=ctk.CTkFont(family=FONTS["QUIZ_WELCOME"][0], size=FONTS["QUIZ_WELCOME"][1]),
-            text_color=COLOR_TEXT2, justify="center",
+            text_color=COLORS["TEXT2"], justify="center",
         ).pack(pady=(0, 16), padx=48)
 
         if not is_empty:
             ctk.CTkButton(
                 frame, text="Start quiz",
                 font=ctk.CTkFont(family=FONTS["QUIZ_START"][0], size=FONTS["QUIZ_START"][1], weight=FONTS["QUIZ_START"][2]),
-                fg_color=COLOR_ACCENT, hover_color="#3A8EEF",
+                fg_color=COLORS["ACCENT"], hover_color="#3A8EEF",
                 text_color="white", height=44, width=200, corner_radius=0,
                 command=self._start_session,
             ).pack(pady=(0, 32))
@@ -189,27 +170,27 @@ class TabQuiz(ctk.CTkFrame):
         self._progress_label.configure(text="")
 
         frame = ctk.CTkFrame(
-            self._central_frame, fg_color=COLOR_SURFACE, corner_radius=0
+            self._central_frame, fg_color=COLORS["SURFACE"], corner_radius=0
         )
         frame.grid(row=0, column=0)
 
         ctk.CTkLabel(
             frame, text="Well done!",
             font=ctk.CTkFont(family="Georgia", size=32, weight="bold"),
-            text_color=COLOR_TEXT,
+            text_color=COLORS["TEXT"],
         ).pack(pady=(32, 8), padx=64)
 
         ctk.CTkLabel(
             frame,
             text=f"You have reviewed all\n{len(self._seen_words)} words in your lexicon.",
             font=ctk.CTkFont(family=FONTS["QUIZ_LABEL"][0], size=FONTS["QUIZ_START"][1]),
-            text_color=COLOR_TEXT, justify="center",
+            text_color=COLORS["TEXT"], justify="center",
         ).pack(pady=(0, 16))
 
         ctk.CTkButton(
             frame, text="Play again",
             font=ctk.CTkFont(family=FONTS["QUIZ_BTN"][0], size=FONTS["QUIZ_BTN"][1], weight=FONTS["QUIZ_BTN"][2]),
-            fg_color=COLOR_ACCENT, hover_color="#3A8EEF",
+            fg_color=COLORS["ACCENT"], hover_color="#3A8EEF",
             text_color="white", height=44, width=160, corner_radius=0,
             command=self._start_session,
         ).pack(pady=(0, 32))
@@ -234,8 +215,8 @@ class TabQuiz(ctk.CTkFrame):
         wrapper.grid_columnconfigure(0, weight=1)
 
         # --- Card ---
-        card_color  = COLOR_CARD_WORD  if self._show_word_side else COLOR_CARD_DEF
-        card_border = BORDER_CARD_WORD if self._show_word_side else BORDER_CARD_DEF
+        card_color  = COLORS["CARD_WORD"]  if self._show_word_side else COLORS["CARD_DEF"]
+        card_border = COLORS["CARD_WORD_BORDER"] if self._show_word_side else COLORS["CARD_DEF_BORDER"]
 
         self._card = ctk.CTkFrame(
             wrapper,
@@ -257,9 +238,9 @@ class TabQuiz(ctk.CTkFrame):
         ctk.CTkButton(
             wrapper, text="Next word  ->",
             font=ctk.CTkFont(family=FONTS["QUIZ_BTN"][0], size=FONTS["QUIZ_BTN"][1], weight=FONTS["QUIZ_BTN"][2]),
-            fg_color=COLOR_SURFACE, hover_color="#3A3A5C",
+            fg_color=COLORS["SURFACE"], hover_color="#3A3A5C",
             border_color="#3A3A5C", border_width=1,
-            text_color=COLOR_TEXT,
+            text_color=COLORS["TEXT"],
             height=max(36, fonts["btn"] * 3),
             width=btn_width,
             corner_radius=0,

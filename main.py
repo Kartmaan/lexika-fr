@@ -13,8 +13,8 @@ Custom paths:
     python main.py --db /path/to/dict.db --lexicon /path/to/lexicon.json
 
 Author  : Kartmaan
-Date    : 2026-03-21
-Version : 1.2.0
+Date    : 2026-03-31
+Version : 1.3.0
 """
 
 import sys

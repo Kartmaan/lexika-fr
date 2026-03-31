@@ -105,8 +105,8 @@ COLORS = {
     "ERROR" : "#FF5F5F",
     "CARD_WORD" : "#1A2A4A",
     "CARD_DEF" : "#1A3A2A",
-    "CARD_WORD_SIDE" : "#3A5A8A",
-    "CARD_DEF_SIDE" : "#3A7A5A",
+    "CARD_WORD_BORDER" : "#3A5A8A",
+    "CARD_DEF_BORDER" : "#3A7A5A",
 }
 
 GENDER_COLORS = {
