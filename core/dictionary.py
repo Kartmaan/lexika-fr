@@ -66,12 +66,16 @@ class Dictionary:
         if not word:
             return None
         cursor = self._conn.cursor()
-        cursor.execute("SELECT pos, definitions FROM mots WHERE forme = ?", (word,))
+        cursor.execute("SELECT pos, definitions, gender FROM mots WHERE forme = ?", (word,))
         rows = cursor.fetchall()
         if not rows:
             return None
         return [
-            {"pos": row["pos"], "definitions": json.loads(row["definitions"])}
+            {
+                "pos":         row["pos"],
+                "gender":      row["gender"],   # 'm', 'f', 'e', or None
+                "definitions": json.loads(row["definitions"]),
+            }
             for row in rows
         ]
 

@@ -9,6 +9,7 @@ import customtkinter as ctk
 from PIL import Image, ImageTk
 from pathlib import Path
 
+from core.config import FONTS
 from core import Dictionary, Lexicon
 from ui.tab_dictionary import TabDictionary
 from ui.tab_lexicon import TabLexicon
@@ -112,7 +113,7 @@ class App(ctk.CTk):
         ctk.CTkLabel(
             banner,
             text="Lexika - French",
-            font=ctk.CTkFont(family="Arial", size=20, weight="bold"),
+            font=ctk.CTkFont(family=FONTS["TITLE"][0], size=FONTS["TITLE"][1], weight=FONTS["TITLE"][2]),
             text_color="#E8E8F0",
         ).grid(row=0, column=0, sticky="w", padx=24, pady=10)
 
@@ -132,7 +133,7 @@ class App(ctk.CTk):
         )
         # CTkTabview does not support font= directly: configure the internal button
         self._tabview._segmented_button.configure(
-            font=ctk.CTkFont(family="Arial", size=14),
+            font=ctk.CTkFont(family=FONTS["TABS"][0], size=FONTS["TABS"][1]),
             height=44,
             dynamic_resizing=True
         )

@@ -15,24 +15,15 @@ import threading
 import urllib.request
 from pathlib import Path
 from tkinter import filedialog
-
 import customtkinter as ctk
+
+from core.config import FONTS, COLORS
 
 DB_URL  = "https://huggingface.co/datasets/Kartmaan/french-dictionary/resolve/main/french_dict.db"
 DB_DEST = Path(__file__).parent.parent / "data" / "french_dict.db"
 
-COLOR_BG      = "#12121C"
-COLOR_SURFACE  = "#1E1E2E"
-COLOR_SURFACE2 = "#2A2A3E"
-COLOR_ACCENT   = "#4A9EFF"
-COLOR_SUCCESS  = "#3DBE7A"
-COLOR_ERROR    = "#FF5F5F"
-COLOR_TEXT     = "#E8E8F0"
-COLOR_NEUTRAL  = "#8A8A9A"
-
 # Minimum columns expected in the 'mots' table
-REQUIRED_COLUMNS = {"forme", "pos", "definitions"}
-
+REQUIRED_COLUMNS = {"forme", "pos", "definitions", "gender"}
 
 # ---------------------------------------------------------------------------
 # Database validation
@@ -104,7 +95,7 @@ class SetupWindow(ctk.CTk):
         self.title("Lexika - Setup")
         self.geometry("540x400")
         self.resizable(False, False)
-        self.configure(fg_color=COLOR_BG)
+        self.configure(fg_color=COLORS["BG"])
 
         self._download_in_progress = False
         self._build_ui()
@@ -118,7 +109,7 @@ class SetupWindow(ctk.CTk):
         self.grid_rowconfigure(0, weight=1)
 
         frame = ctk.CTkFrame(
-            self, fg_color=COLOR_SURFACE,
+            self, fg_color=COLORS["SURFACE"],
             corner_radius=0, border_width=1, border_color="#2E2E42"
         )
         frame.grid(row=0, column=0, sticky="nsew", padx=24, pady=24)
@@ -129,21 +120,21 @@ class SetupWindow(ctk.CTk):
             frame,
             text="Welcome to Lexika",
             font=ctk.CTkFont(family="Georgia", size=24, weight="bold"),
-            text_color=COLOR_TEXT,
+            text_color=COLORS["TEXT"],
         ).grid(row=0, column=0, pady=(24, 4))
 
         # Message
         ctk.CTkLabel(
             frame,
             text="The dictionary needs to be downloaded or imported from your disk.",
-            font=ctk.CTkFont(family="Arial", size=14),
-            text_color=COLOR_NEUTRAL, justify="center",
+            font=ctk.CTkFont(family=FONTS["WELCOME_LABEL"][0], size=FONTS["WELCOME_LABEL"][1]),
+            text_color=COLORS["NEUTRAL"], justify="center",
         ).grid(row=1, column=0, padx=24, pady=(0, 20))
 
         # Progress bar (hidden by default)
         self._progress_bar = ctk.CTkProgressBar(
             frame, width=420, height=10, corner_radius=0,
-            fg_color=COLOR_SURFACE2, progress_color=COLOR_ACCENT,
+            fg_color=COLORS["SURFACE2"], progress_color=COLORS["ACCENT"],
         )
         self._progress_bar.set(0)
         self._progress_bar.grid(row=2, column=0, padx=32, pady=(0, 6))
@@ -153,7 +144,7 @@ class SetupWindow(ctk.CTk):
         self._status_label = ctk.CTkLabel(
             frame, text="",
             font=ctk.CTkFont(family="Georgia", size=12),
-            text_color=COLOR_NEUTRAL, wraplength=460, justify="center",
+            text_color=COLORS["NEUTRAL"], wraplength=460, justify="center",
         )
         self._status_label.grid(row=3, column=0, padx=16, pady=(0, 16))
 
@@ -169,15 +160,15 @@ class SetupWindow(ctk.CTk):
 
         ctk.CTkLabel(
             dl_block,
-            text="From Internet (Hugging Face, ~270 MB)",
-            font=ctk.CTkFont(family="Arial", size=12),
-            text_color=COLOR_NEUTRAL, anchor="w",
+            text="From Internet (Hugging Face, ~280 MB)",
+            font=ctk.CTkFont(family=FONTS["STATUS_LABEL"][0], size=FONTS["STATUS_LABEL"][1]),
+            text_color=COLORS["NEUTRAL"], anchor="w",
         ).grid(row=0, column=0, sticky="w")
 
         self._btn_download = ctk.CTkButton(
             dl_block, text="Download",
-            font=ctk.CTkFont(family="Arial", size=13, weight="bold"),
-            fg_color=COLOR_ACCENT, hover_color="#3A8EEF",
+            font=ctk.CTkFont(family=FONTS["BTN"][0], size=FONTS["BTN"][1], weight=FONTS["BTN"][2]),
+            fg_color=COLORS["ACCENT"], hover_color="#3A8EEF",
             text_color="white", height=38, width=160, corner_radius=0,
             command=self._start_download,
         )
@@ -191,13 +182,13 @@ class SetupWindow(ctk.CTk):
         ctk.CTkLabel(
             imp_block,
             text="From disk (compatible .db file)",
-            font=ctk.CTkFont(family="Arial", size=12),
-            text_color=COLOR_NEUTRAL, anchor="w",
+            font=ctk.CTkFont(family=FONTS["STATUS_LABEL"][0], size=FONTS["STATUS_LABEL"][1]),
+            text_color=COLORS["NEUTRAL"], anchor="w",
         ).grid(row=0, column=0, sticky="w")
 
         self._btn_import = ctk.CTkButton(
             imp_block, text="Import",
-            font=ctk.CTkFont(family="Arial", size=13, weight="bold"),
+            font=ctk.CTkFont(family=FONTS["BTN"][0], size=FONTS["BTN"][1], weight=FONTS["BTN"][2]),
             fg_color="#5A4E8A", hover_color="#6A5E9A",
             text_color="white", height=38, width=160, corner_radius=0,
             command=self._import_db,
@@ -209,7 +200,7 @@ class SetupWindow(ctk.CTk):
             frame, text="Quit",
             font=ctk.CTkFont(family="Georgia", size=12),
             fg_color="transparent", hover_color="#2A2A3E",
-            text_color=COLOR_NEUTRAL, height=30, corner_radius=0,
+            text_color=COLORS["NEUTRAL"], height=30, corner_radius=0,
             command=self.destroy,
         )
         self._btn_quit.grid(row=7, column=0, pady=(4, 20))
@@ -227,30 +218,30 @@ class SetupWindow(ctk.CTk):
             return
 
         path = Path(path)
-        self._status_label.configure(text="Verifying file...", text_color=COLOR_NEUTRAL)
+        self._status_label.configure(text="Verifying file...", text_color=COLORS["NEUTRAL"])
         self.update_idletasks()
 
         valid, message = _validate_db(path)
 
         if not valid:
             self._status_label.configure(
-                text=f"Invalid file: {message}", text_color=COLOR_ERROR
+                text=f"Invalid file: {message}", text_color=COLORS["ERROR"]
             )
             return
 
         try:
             DB_DEST.parent.mkdir(parents=True, exist_ok=True)
-            self._status_label.configure(text="Copying...", text_color=COLOR_NEUTRAL)
+            self._status_label.configure(text="Copying...", text_color=COLORS["NEUTRAL"])
             self.update_idletasks()
             shutil.copy2(path, DB_DEST)
         except Exception as e:
             self._status_label.configure(
-                text=f"Copy error: {e}", text_color=COLOR_ERROR
+                text=f"Copy error: {e}", text_color=COLORS["ERROR"]
             )
             return
 
-        self._status_label.configure(text=f"OK  {message}", text_color=COLOR_SUCCESS)
-        self._btn_import.configure(state="disabled", text="OK  Imported", fg_color=COLOR_SUCCESS)
+        self._status_label.configure(text=f"OK  {message}", text_color=COLORS["SUCCESS"])
+        self._btn_import.configure(state="disabled", text="OK  Imported", fg_color=COLORS["SUCCESS"])
         self._btn_download.configure(state="disabled")
         self._btn_quit.configure(state="disabled")
         self.after(1400, self._launch_app)
@@ -271,7 +262,7 @@ class SetupWindow(ctk.CTk):
         self._progress_bar.configure(mode="indeterminate")
         self._progress_bar.start()
         self._status_label.configure(
-            text="Connecting to Hugging Face...", text_color=COLOR_NEUTRAL
+            text="Connecting to Hugging Face...", text_color=COLORS["NEUTRAL"]
         )
 
         threading.Thread(target=self._download, daemon=True).start()
@@ -307,16 +298,16 @@ class SetupWindow(ctk.CTk):
         self._progress_bar.set(progress)
         self._status_label.configure(
             text=f"{mb_dl:.1f} MB / {mb_tot:.1f} MB  ({progress * 100:.0f}%)",
-            text_color=COLOR_NEUTRAL,
+            text_color=COLORS["NEUTRAL"],
         )
 
     def _download_success(self):
         self._progress_bar.set(1.0)
         self._status_label.configure(
-            text="Download complete - launching Lexika...", text_color=COLOR_SUCCESS
+            text="Download complete - launching Lexika...", text_color=COLORS["SUCCESS"]
         )
         self._btn_download.configure(
-            text="OK  Done", fg_color=COLOR_SUCCESS, hover_color=COLOR_SUCCESS
+            text="OK  Done", fg_color=COLORS["SUCCESS"], hover_color=COLORS["SUCCESS"]
         )
         self.after(1200, self._launch_app)
 
@@ -325,10 +316,10 @@ class SetupWindow(ctk.CTk):
         self._progress_bar.stop()
         self._progress_bar.set(0)
         msg = error[:70] + "..." if len(error) > 70 else error
-        self._status_label.configure(text=f"Error: {msg}", text_color=COLOR_ERROR)
+        self._status_label.configure(text=f"Error: {msg}", text_color=COLORS["ERROR"])
         self._btn_download.configure(
             state="normal", text="Retry",
-            fg_color=COLOR_ERROR, hover_color="#CC4444"
+            fg_color=COLORS["ERROR"], hover_color="#CC4444"
         )
         self._btn_import.configure(state="normal")
         self._btn_quit.configure(state="normal")

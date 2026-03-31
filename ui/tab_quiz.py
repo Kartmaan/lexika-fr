@@ -8,6 +8,7 @@ The card adapts its width (65% of the available frame, clamped between
 
 import random
 import customtkinter as ctk
+from core.config import FONTS, COLORS, POS_LABELS, GENDER_LABELS, GENDER_COLORS
 
 COLOR_SURFACE    = "#1E1E2E"
 COLOR_SURFACE2   = "#2A2A3E"
@@ -27,11 +28,11 @@ CARD_MIN     = 400     # minimum card width in pixels
 CARD_MAX     = 1000    # maximum card width in pixels
 RESIZE_DELTA = 20      # minimum pixel change before triggering a rebuild
 
-POS_LABELS = {
+"""POS_LABELS = {
     "N": "Noun", "V": "Verb", "ADJ": "Adjective", "ADV": "Adverb",
     "PRO": "Pronoun", "DET": "Determiner", "PRE": "Preposition",
     "CON": "Conjunction", "INT": "Interjection", "?": "Undefined",
-}
+}"""
 
 
 def _card_fonts(card_width: int) -> dict:
@@ -46,6 +47,9 @@ def _card_fonts(card_width: int) -> dict:
     else:
         return {"word": 42, "subtitle": 15, "body": 15, "btn": 16, "pos": 11}
 
+
+"""GENDER_LABELS = {"m": "masc.", "f": "fém.", "e": "épicène"}
+GENDER_COLORS = {"m": "#4A9EFF", "f": "#FF7EB3", "e": "#A78BFA"}"""
 
 class TabQuiz(ctk.CTkFrame):
     """Vocabulary quiz tab."""
@@ -86,14 +90,14 @@ class TabQuiz(ctk.CTkFrame):
 
         self._progress_label = ctk.CTkLabel(
             header, text="",
-            font=ctk.CTkFont(family="Arial", size=12),
+            font=ctk.CTkFont(family=FONTS["QUIZ_LABEL"][0], size=FONTS["QUIZ_LABEL"][1]),
             text_color=COLOR_NEUTRAL,
         )
         self._progress_label.pack(side="left", padx=4, pady=12)
 
         self._btn_restart = ctk.CTkButton(
             header, text="Restart",
-            font=ctk.CTkFont(family="Arial", size=13),
+            font=ctk.CTkFont(family=FONTS["BTN"][0], size=FONTS["BTN"][1]),
             fg_color=COLOR_SURFACE2, hover_color="#3A3A5C",
             text_color=COLOR_ACCENT,
             height=34, corner_radius=0,
@@ -166,14 +170,14 @@ class TabQuiz(ctk.CTkFrame):
         )
         ctk.CTkLabel(
             frame, text=msg,
-            font=ctk.CTkFont(family="Arial", size=15),
+            font=ctk.CTkFont(family=FONTS["QUIZ_WELCOME"][0], size=FONTS["QUIZ_WELCOME"][1]),
             text_color=COLOR_TEXT2, justify="center",
         ).pack(pady=(0, 16), padx=48)
 
         if not is_empty:
             ctk.CTkButton(
                 frame, text="Start quiz",
-                font=ctk.CTkFont(family="Arial", size=15, weight="bold"),
+                font=ctk.CTkFont(family=FONTS["QUIZ_START"][0], size=FONTS["QUIZ_START"][1], weight=FONTS["QUIZ_START"][2]),
                 fg_color=COLOR_ACCENT, hover_color="#3A8EEF",
                 text_color="white", height=44, width=200, corner_radius=0,
                 command=self._start_session,
@@ -198,13 +202,13 @@ class TabQuiz(ctk.CTkFrame):
         ctk.CTkLabel(
             frame,
             text=f"You have reviewed all\n{len(self._seen_words)} words in your lexicon.",
-            font=ctk.CTkFont(family="Arial", size=15),
+            font=ctk.CTkFont(family=FONTS["QUIZ_LABEL"][0], size=FONTS["QUIZ_START"][1]),
             text_color=COLOR_TEXT, justify="center",
         ).pack(pady=(0, 16))
 
         ctk.CTkButton(
             frame, text="Play again",
-            font=ctk.CTkFont(family="Arial", size=15, weight="bold"),
+            font=ctk.CTkFont(family=FONTS["QUIZ_BTN"][0], size=FONTS["QUIZ_BTN"][1], weight=FONTS["QUIZ_BTN"][2]),
             fg_color=COLOR_ACCENT, hover_color="#3A8EEF",
             text_color="white", height=44, width=160, corner_radius=0,
             command=self._start_session,
@@ -252,7 +256,7 @@ class TabQuiz(ctk.CTkFrame):
         btn_width = max(160, min(240, self._card_width // 3))
         ctk.CTkButton(
             wrapper, text="Next word  ->",
-            font=ctk.CTkFont(family="Arial", size=fonts["btn"], weight="bold"),
+            font=ctk.CTkFont(family=FONTS["QUIZ_BTN"][0], size=FONTS["QUIZ_BTN"][1], weight=FONTS["QUIZ_BTN"][2]),
             fg_color=COLOR_SURFACE, hover_color="#3A3A5C",
             border_color="#3A3A5C", border_width=1,
             text_color=COLOR_TEXT,
@@ -272,20 +276,20 @@ class TabQuiz(ctk.CTkFrame):
 
         ctk.CTkLabel(
             parent, text="What is the definition of...",
-            font=ctk.CTkFont(family="Arial", size=fonts["subtitle"], slant="italic"),
+            font=ctk.CTkFont(family=FONTS["QUIZ_WELCOME"][0], size=FONTS["QUIZ_WELCOME"][1], slant=FONTS["QUIZ_WELCOME"][3]),
             text_color="#7A9ABE",
         ).grid(row=0, column=0, pady=(pad, 4), padx=pad)
 
         ctk.CTkLabel(
             parent, text=self._current_word.capitalize(),
-            font=ctk.CTkFont(family="Arial", size=fonts["word"], weight="bold"),
+            font=ctk.CTkFont(family=FONTS["QUIZ_WORD"][0], size=FONTS["QUIZ_WORD"][1], weight=FONTS["QUIZ_WORD"][2]),
             text_color="#A8D0FF",
         ).grid(row=1, column=0, pady=(4, pad), padx=pad)
 
         btn_w = max(140, self._card_width // 4)
         ctk.CTkButton(
             parent, text="See the answer",
-            font=ctk.CTkFont(family="Arial", size=fonts["btn"], weight="bold"),
+            font=ctk.CTkFont(family=FONTS["QUIZ_BTN"][0], size=FONTS["QUIZ_BTN"][1], weight=FONTS["QUIZ_BTN"][2]),
             fg_color="#2A4A7A", hover_color="#3A5A8A",
             text_color="#A8D0FF",
             height=max(36, fonts["btn"] * 3),
@@ -312,13 +316,28 @@ class TabQuiz(ctk.CTkFrame):
         for lexeme in entry.get("lexemes", []):
             pos_label = POS_LABELS.get(lexeme.get("pos", "?"), "?")
 
+            gender      = lexeme.get("gender")
+            show_gender = (lexeme.get("pos") == "N" and gender in GENDER_LABELS)
+
+            badge_row = ctk.CTkFrame(parent, fg_color="transparent")
+            badge_row.grid(row=row, column=0, sticky="w", padx=pad, pady=(4, 2))
+            row += 1
+
             ctk.CTkLabel(
-                parent, text=f"  {pos_label}  ",
+                badge_row, text=f"  {pos_label}  ",
                 font=ctk.CTkFont(family="Arial", size=fonts["pos"], weight="bold"),
                 fg_color="#2A5A3A", text_color="#80C8A0",
                 corner_radius=0, height=20,
-            ).grid(row=row, column=0, sticky="w", padx=pad, pady=(4, 2))
-            row += 1
+            ).pack(side="left", padx=(0, 4))
+
+            if show_gender:
+                ctk.CTkLabel(
+                    badge_row,
+                    text=f"  {GENDER_LABELS[gender]}  ",
+                    font=ctk.CTkFont(family="Arial", size=fonts["pos"], weight="bold"),
+                    fg_color="#1A2A1A", text_color=GENDER_COLORS[gender],
+                    corner_radius=0, height=20,
+                ).pack(side="left")
 
             for i, defn in enumerate(lexeme.get("definitions", [])[:3], 1):
                 gloss = defn.get("gloss", "")
@@ -343,7 +362,7 @@ class TabQuiz(ctk.CTkFrame):
         btn_w = max(140, self._card_width // 4)
         ctk.CTkButton(
             parent, text="See the word",
-            font=ctk.CTkFont(family="Arial", size=fonts["btn"], weight="bold"),
+            font=ctk.CTkFont(family=FONTS["QUIZ_BTN"][0], size=FONTS["QUIZ_BTN"][1], weight=FONTS["QUIZ_BTN"][2]),
             fg_color="#2A5A3A", hover_color="#3A6A4A",
             text_color="#80C8A0",
             height=max(36, fonts["btn"] * 3),

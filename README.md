@@ -81,6 +81,7 @@ lexika-fr/
 │   ├── icon.ico             # Windows icon
 │   └── icon.icns            # macOS icon
 ├── core/
+│   ├── config.py            # Global visual identity and grammatical mapping
 │   ├── dictionary.py        # SQLite queries, suggestions, analyzer
 │   └── lexicon.py           # Lexicon JSON management
 ├── ui/
@@ -92,7 +93,7 @@ lexika-fr/
 │   └── tab_analyzer.py      # Analyzer tab
 └── data/
     ├── french_dict.db       # SQLite database (generated at setup)
-    └── lexique.json         # Personal lexicon (auto-created)
+    └── lexicon.json         # Personal lexicon (auto-created)
 ```
 
 ---
@@ -108,6 +109,7 @@ The main tab of the application.
 **Results display**
 - Definitions are grouped by part of speech (Noun, Verb, Adjective...) with a color badge
 - Each definition is numbered and may include:
+  - Gender if the word is an noun 
   - Hierarchical sub-definitions
   - Usage examples in italics
   - Register tags *(familiar)*, semantic tags *[figurative]* or domain tags *‹music›*
@@ -153,7 +155,13 @@ The personal lexicon, laid out in two columns.
 
 A tool for reviewing the vocabulary saved in your lexicon.
 
+**Word side**
+
 ![Quiz](assets/readme/quiz_cap.png)
+
+**Definition side**
+
+![Quiz_def](assets/readme/quiz_def_cap.png)
 
 **How it works**
 - The quiz can only start if the lexicon contains at least one word

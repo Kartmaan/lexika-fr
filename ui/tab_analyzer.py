@@ -20,15 +20,7 @@ import threading
 import customtkinter as ctk
 from tkinter import StringVar, IntVar, BooleanVar
 
-COLOR_ACCENT   = "#4A9EFF"
-COLOR_SUCCESS  = "#3DBE7A"
-COLOR_ERROR    = "#FF5F5F"
-COLOR_NEUTRAL  = "#8A8A9A"
-COLOR_SURFACE  = "#1E1E2E"
-COLOR_SURFACE2 = "#2A2A3E"
-COLOR_SURFACE3 = "#14141F"
-COLOR_TEXT     = "#E8E8F0"
-COLOR_TEXT2    = "#A0A0B8"
+from core.config import FONTS, COLORS
 
 MAX_RESULTS = 500   # hard cap on displayed words
 
@@ -81,7 +73,7 @@ class TabAnalyzer(ctk.CTkFrame):
 
     def _build_filter_panel(self):
         left = ctk.CTkFrame(
-            self, fg_color=COLOR_SURFACE3, corner_radius=0,
+            self, fg_color=COLORS["SURFACE3"], corner_radius=0,
             border_width=1, border_color="#2E2E42", width=280
         )
         left.grid(row=0, column=0, sticky="nsew", padx=(20, 6), pady=20)
@@ -93,8 +85,8 @@ class TabAnalyzer(ctk.CTkFrame):
         ctk.CTkLabel(
             left,
             text="Filters",
-            font=ctk.CTkFont(family="Arial", size=16, weight="bold"),
-            text_color=COLOR_TEXT,
+            font=ctk.CTkFont(family=FONTS["ANALYZER_TITLE"][0], size=FONTS["ANALYZER_TITLE"][1], weight=FONTS["ANALYZER_TITLE"][2]),
+            text_color=COLORS["TEXT"],
             anchor="w",
         ).grid(row=0, column=0, sticky="w", padx=16, pady=(14, 8))
 
@@ -102,7 +94,7 @@ class TabAnalyzer(ctk.CTkFrame):
         filters_scroll = ctk.CTkScrollableFrame(
             left, fg_color="transparent",
             scrollbar_button_color="#3A3A5C",
-            scrollbar_button_hover_color=COLOR_ACCENT,
+            scrollbar_button_hover_color=COLORS["ACCENT"],
         )
         filters_scroll.grid(row=1, column=0, sticky="nsew", padx=4, pady=(0, 4))
         filters_scroll.grid_columnconfigure(0, weight=1)
@@ -118,17 +110,17 @@ class TabAnalyzer(ctk.CTkFrame):
 
         ctk.CTkButton(
             btn_area, text="Reset",
-            font=ctk.CTkFont(family="Arial", size=12),
-            fg_color=COLOR_SURFACE2, hover_color="#3A3A5C",
-            text_color=COLOR_TEXT2,
+            font=ctk.CTkFont(family=FONTS["BTN"][0], size=FONTS["BTN"][1]),
+            fg_color=COLORS["SURFACE2"], hover_color="#3A3A5C",
+            text_color=COLORS["TEXT2"],
             height=34, corner_radius=0,
             command=self._reset_filters,
         ).grid(row=0, column=0, sticky="ew", padx=(0, 4))
 
         ctk.CTkButton(
             btn_area, text="Search",
-            font=ctk.CTkFont(family="Arial", size=12, weight="bold"),
-            fg_color=COLOR_ACCENT, hover_color="#3A8EEF",
+            font=ctk.CTkFont(family=FONTS["BTN"][0], size=FONTS["BTN"][1], weight=FONTS["BTN"][2]),
+            fg_color=COLORS["ACCENT"], hover_color="#3A8EEF",
             text_color="white",
             height=34, corner_radius=0,
             command=self._run_analysis,
@@ -142,8 +134,8 @@ class TabAnalyzer(ctk.CTkFrame):
         def section(text, r):
             ctk.CTkLabel(
                 parent, text=text,
-                font=ctk.CTkFont(family="Arial", size=11, weight="bold"),
-                text_color=COLOR_NEUTRAL, anchor="w",
+                font=ctk.CTkFont(family=FONTS["ANALYZER_HELP"][0], size=FONTS["ANALYZER_HELP"][1], weight=FONTS["ANALYZER_HELP"][2]),
+                text_color=COLORS["NEUTRAL"], anchor="w",
             ).grid(row=r, column=0, sticky="w", padx=14, pady=(10, 2))
             return r + 1
 
@@ -152,9 +144,9 @@ class TabAnalyzer(ctk.CTkFrame):
             e = ctk.CTkEntry(
                 parent, textvariable=var,
                 placeholder_text=placeholder,
-                font=ctk.CTkFont(family="Arial", size=13),
-                fg_color=COLOR_SURFACE2, border_color="#3A3A5C",
-                text_color=COLOR_TEXT, height=32, corner_radius=0,
+                font=ctk.CTkFont(family=FONTS["ANALYZER_ENTRY"][0], size=FONTS["ANALYZER_ENTRY"][1]),
+                fg_color=COLORS["SURFACE2"], border_color="#3A3A5C",
+                text_color=COLORS["TEXT"], height=32, corner_radius=0,
             )
             if width:
                 e.configure(width=width)
@@ -171,8 +163,8 @@ class TabAnalyzer(ctk.CTkFrame):
             textvariable=self._var_length,
             placeholder_text="e.g.  7",
             font=ctk.CTkFont(family="Georgia", size=13),
-            fg_color=COLOR_SURFACE2, border_color="#3A3A5C",
-            text_color=COLOR_TEXT, height=32, corner_radius=0,
+            fg_color=COLORS["SURFACE2"], border_color="#3A3A5C",
+            text_color=COLORS["TEXT"], height=32, corner_radius=0,
         )
         length_entry.grid(row=row, column=0, sticky="ew", padx=14, pady=(0, 2))
         length_entry.bind("<Return>", lambda ev: self._run_analysis())
@@ -222,8 +214,8 @@ class TabAnalyzer(ctk.CTkFrame):
         ctk.CTkLabel(
             partial_row,
             text="Allow partial anagrams",
-            font=ctk.CTkFont(family="Arial", size=11),
-            text_color=COLOR_TEXT2, anchor="w",
+            font=ctk.CTkFont(family=FONTS["ANALYZER_HELP"][0], size=FONTS["ANALYZER_HELP"][1]),
+            text_color=COLORS["TEXT2"], anchor="w",
         ).grid(row=0, column=0, sticky="w")
 
         ctk.CTkSwitch(
@@ -231,15 +223,15 @@ class TabAnalyzer(ctk.CTkFrame):
             text="",
             variable=self._var_partial_anagram,
             onvalue=True, offvalue=False,
-            progress_color=COLOR_ACCENT,
+            progress_color=COLORS["ACCENT"],
             width=40,
         ).grid(row=0, column=1, sticky="e")
 
         ctk.CTkLabel(
             parent,
-            text="(words using any subset of the letters,  min. 3 letters)",
-            font=ctk.CTkFont(family="Arial", size=10, slant="italic"),
-            text_color=COLOR_NEUTRAL, anchor="w",
+            text="(words using any subset of the letters)",
+            font=ctk.CTkFont(family=FONTS["ANALYZER_HELP"][0], size=FONTS["ANALYZER_HELP"][1]),
+            text_color=COLORS["NEUTRAL"], anchor="w",
         ).grid(row=row, column=0, sticky="w", padx=14, pady=(0, 6))
         row += 1
 
@@ -258,9 +250,9 @@ class TabAnalyzer(ctk.CTkFrame):
         ctk.CTkButton(
             self._nth_container,
             text="+ Add position",
-            font=ctk.CTkFont(family="Arial", size=11),
-            fg_color=COLOR_SURFACE2, hover_color="#3A3A5C",
-            text_color=COLOR_ACCENT,
+            font=ctk.CTkFont(family=FONTS["ANALYZER_MINI_BTN"][0], size=FONTS["ANALYZER_MINI_BTN"][1]),
+            fg_color=COLORS["SURFACE2"], hover_color="#3A3A5C",
+            text_color=COLORS["ACCENT"],
             height=26, corner_radius=0,
             command=self._add_nth_row,
         ).grid(row=1, column=0, sticky="w", pady=(4, 0))
@@ -281,15 +273,15 @@ class TabAnalyzer(ctk.CTkFrame):
         self._var_no_comp = BooleanVar(value=True)
         ctk.CTkLabel(
             switch_row, text="Exclude compound words",
-            font=ctk.CTkFont(family="Arial", size=12),
-            text_color=COLOR_TEXT2, anchor="w",
+            font=ctk.CTkFont(family=FONTS["ANALYZER_HELP"][0], size=FONTS["ANALYZER_HELP"][1]),
+            text_color=COLORS["TEXT2"], anchor="w",
         ).grid(row=0, column=0, sticky="w")
         ctk.CTkSwitch(
             switch_row,
             text="",
             variable=self._var_no_comp,
             onvalue=True, offvalue=False,
-            progress_color=COLOR_ACCENT,
+            progress_color=COLORS["ACCENT"],
             width=40,
         ).grid(row=0, column=1, sticky="e")
 
@@ -307,37 +299,37 @@ class TabAnalyzer(ctk.CTkFrame):
         # Position field (narrow)
         ctk.CTkLabel(
             frame, text="Pos",
-            font=ctk.CTkFont(family="Arial", size=11),
-            text_color=COLOR_NEUTRAL, width=24,
+            font=ctk.CTkFont(family=FONTS["ANALYZER_HELP"][0], size=FONTS["ANALYZER_HELP"][1]),
+            text_color=COLORS["NEUTRAL"], width=24,
         ).grid(row=0, column=0, padx=(0, 4))
 
         ctk.CTkEntry(
             frame, textvariable=pos_var,
-            font=ctk.CTkFont(family="Arial", size=13),
-            fg_color=COLOR_SURFACE2, border_color="#3A3A5C",
-            text_color=COLOR_TEXT, height=28, width=48, corner_radius=0,
+            font=ctk.CTkFont(family=FONTS["ANALYZER_ENTRY"][0], size=FONTS["ANALYZER_ENTRY"][1]),
+            fg_color=COLORS["SURFACE2"], border_color="#3A3A5C",
+            text_color=COLORS["TEXT"], height=28, width=48, corner_radius=0,
         ).grid(row=0, column=1, padx=(0, 6))
 
         # Letter field (narrow)
         ctk.CTkLabel(
             frame, text="=",
-            font=ctk.CTkFont(family="Arial", size=13),
-            text_color=COLOR_NEUTRAL,
+            font=ctk.CTkFont(family=FONTS["ANALYZER_HELP"][0], size=FONTS["ANALYZER_HELP"][1]),
+            text_color=COLORS["NEUTRAL"],
         ).grid(row=0, column=2, padx=(0, 4))
 
         ctk.CTkEntry(
             frame, textvariable=letter_var,
-            font=ctk.CTkFont(family="Arial", size=13),
-            fg_color=COLOR_SURFACE2, border_color="#3A3A5C",
-            text_color=COLOR_TEXT, height=28, width=48, corner_radius=0,
+            font=ctk.CTkFont(family=FONTS["ANALYZER_ENTRY"][0], size=FONTS["ANALYZER_ENTRY"][1]),
+            fg_color=COLORS["SURFACE2"], border_color="#3A3A5C",
+            text_color=COLORS["TEXT"], height=28, width=48, corner_radius=0,
         ).grid(row=0, column=3, padx=(0, 6))
 
         # Remove button
         remove_btn = ctk.CTkButton(
             frame, text="x",
-            font=ctk.CTkFont(family="Arial", size=11),
+            font=ctk.CTkFont(family=FONTS["ANALYZER_MINI_BTN"][0], size=FONTS["ANALYZER_MINI_BTN"][1]),
             fg_color="#3A1A1A", hover_color="#5A2A2A",
-            text_color=COLOR_ERROR,
+            text_color=COLORS["ERROR"],
             height=28, width=28, corner_radius=0,
             command=lambda f=frame, pv=pos_var, lv=letter_var: self._remove_nth_row(f, pv, lv),
         )
@@ -357,7 +349,7 @@ class TabAnalyzer(ctk.CTkFrame):
 
     def _build_results_panel(self):
         right = ctk.CTkFrame(
-            self, fg_color=COLOR_SURFACE, corner_radius=0,
+            self, fg_color=COLORS["SURFACE"], corner_radius=0,
             border_width=1, border_color="#2E2E42"
         )
         right.grid(row=0, column=1, sticky="nsew", padx=(6, 20), pady=20)
@@ -372,23 +364,23 @@ class TabAnalyzer(ctk.CTkFrame):
         self._result_label = ctk.CTkLabel(
             header,
             text="Results will appear here after a search.",
-            font=ctk.CTkFont(family="Arial", size=13),
-            text_color=COLOR_NEUTRAL, anchor="w",
+            font=ctk.CTkFont(family=FONTS["ANALYZER_STATUS"][0], size=FONTS["ANALYZER_STATUS"][1]),
+            text_color=COLORS["NEUTRAL"], anchor="w",
         )
         self._result_label.grid(row=0, column=0, sticky="w")
 
         self._spinner_label = ctk.CTkLabel(
             header, text="",
-            font=ctk.CTkFont(family="Arial", size=12),
-            text_color=COLOR_ACCENT,
+            font=ctk.CTkFont(family=FONTS["ANALYZER_RESULT"][0], size=FONTS["ANALYZER_RESULT"][1]),
+            text_color=COLORS["ACCENT"],
         )
         self._spinner_label.grid(row=0, column=1, sticky="e")
 
         # Scrollable results area
         self._results_frame = ctk.CTkScrollableFrame(
-            right, fg_color=COLOR_SURFACE,
+            right, fg_color=COLORS["SURFACE"],
             scrollbar_button_color="#3A3A5C",
-            scrollbar_button_hover_color=COLOR_ACCENT,
+            scrollbar_button_hover_color=COLORS["ACCENT"],
             corner_radius=0,
         )
         self._results_frame.grid(row=1, column=0, sticky="nsew", padx=4, pady=(0, 4))
@@ -404,8 +396,8 @@ class TabAnalyzer(ctk.CTkFrame):
         ctk.CTkLabel(
             self._results_frame,
             text="Set one or more filters on the left, then click Search.",
-            font=ctk.CTkFont(family="Arial", size=13),
-            text_color=COLOR_NEUTRAL, justify="left", anchor="w",
+            font=ctk.CTkFont(family=FONTS["ANALYZER_STATUS"][0], size=FONTS["ANALYZER_STATUS"][1]),
+            text_color=COLORS["NEUTRAL"], justify="left", anchor="w",
         ).pack(anchor="w", padx=16, pady=20)
 
     # ------------------------------------------------------------------
@@ -484,7 +476,7 @@ class TabAnalyzer(ctk.CTkFrame):
 
         # Disable search while running
         self._spinner_label.configure(text="Searching...")
-        self._result_label.configure(text="", text_color=COLOR_NEUTRAL)
+        self._result_label.configure(text="", text_color=COLORS["NEUTRAL"])
 
         for w in self._results_frame.winfo_children():
             w.destroy()
@@ -515,20 +507,20 @@ class TabAnalyzer(ctk.CTkFrame):
         if not words:
             self._result_label.configure(
                 text="No words found matching these criteria.",
-                text_color=COLOR_NEUTRAL,
+                text_color=COLORS["NEUTRAL"],
             )
             ctk.CTkLabel(
                 self._results_frame,
                 text="No results. Try relaxing some filters.",
-                font=ctk.CTkFont(family="Arial", size=13),
-                text_color=COLOR_NEUTRAL, anchor="w",
+                font=ctk.CTkFont(family=FONTS["ANALYZER_STATUS"][0], size=FONTS["ANALYZER_STATUS"][1]),
+                text_color=COLORS["NEUTRAL"], anchor="w",
             ).pack(anchor="w", padx=16, pady=20)
             return
 
         count_text = f"{len(words)} word{'s' if len(words) > 1 else ''} found"
         if truncated:
             count_text += f"  (limited to {MAX_RESULTS} — refine your search)"
-        self._result_label.configure(text=count_text, text_color=COLOR_SUCCESS)
+        self._result_label.configure(text=count_text, text_color=COLORS["SUCCESS"])
 
         # Render word tiles in a wrapping grid
         # We use a regular Frame inside the scrollable area and pack rows
@@ -541,10 +533,10 @@ class TabAnalyzer(ctk.CTkFrame):
             btn = ctk.CTkButton(
                 tile_container,
                 text=word.capitalize(),
-                font=ctk.CTkFont(family="Arial", size=13),
-                fg_color=COLOR_SURFACE2,
+                font=ctk.CTkFont(family=FONTS["ANALYZER_RESULT"][0], size=FONTS["ANALYZER_RESULT"][1]),
+                fg_color=COLORS["SURFACE2"],
                 hover_color="#3A3A5C",
-                text_color=COLOR_ACCENT,
+                text_color=COLORS["ACCENT"],
                 height=34, width=120,
                 corner_radius=0,
                 command=lambda w=word: self._on_tile_click(w),
@@ -562,7 +554,7 @@ class TabAnalyzer(ctk.CTkFrame):
 
     def _show_error(self, message: str):
         self._spinner_label.configure(text="")
-        self._result_label.configure(text=message, text_color=COLOR_ERROR)
+        self._result_label.configure(text=message, text_color=COLORS["ERROR"])
 
     # ------------------------------------------------------------------
     # Reset
@@ -587,6 +579,6 @@ class TabAnalyzer(ctk.CTkFrame):
         # Reset results panel
         self._result_label.configure(
             text="Results will appear here after a search.",
-            text_color=COLOR_NEUTRAL,
+            text_color=COLORS["NEUTRAL"],
         )
         #self._show_idle_message()

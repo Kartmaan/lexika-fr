@@ -11,6 +11,7 @@ lexicon.json format:
         "lexemes": [
             {
                 "pos": "N",
+                "gender": "m",
                 "definitions": [
                     {
                         "gloss": "...",
@@ -114,7 +115,8 @@ class Lexicon:
 
         lexemes = [
             {
-                "pos": "?",
+                "pos":    "?",
+                "gender": None,   # custom words have no gender by default
                 "definitions": [
                     {
                         "gloss": d.strip(),
@@ -179,6 +181,18 @@ class Lexicon:
 
             if not isinstance(new_data, dict):
                 return False, "Invalid format: the JSON file is not an object."
+
+            # Validate gender values when present (allow legacy files without gender)
+            VALID_GENDERS = {None, "m", "f", "e"}
+            for word, entry in new_data.items():
+                for lex in entry.get("lexemes", []):
+                    g = lex.get("gender", None)   # absent = legacy, treat as None
+                    if g not in VALID_GENDERS:
+                        return (
+                            False,
+                            f"Invalid gender value '{g}' for word '{word}'. "
+                            "Expected: 'm', 'f', 'e' or null."
+                        )
 
             before = len(self._data)
             for word, entry in new_data.items():

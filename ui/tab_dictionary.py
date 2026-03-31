@@ -4,9 +4,10 @@ ui/tab_dictionary.py
 Dictionary tab: word search, definition display, add to lexicon.
 """
 
-import sys
 import customtkinter as ctk
 from tkinter import StringVar, messagebox
+
+from core.config import FONTS, COLORS, POS_LABELS, GENDER_LABELS, GENDER_COLORS
 
 def _bind_mousewheel(scrollable_frame):
     """Enables mouse wheel scrolling on a CTkScrollableFrame (Linux + Windows)."""
@@ -97,30 +98,6 @@ def _show_clipboard_help():
     )
     messagebox.showinfo("Clipboard unavailable", msg)
 
-# Centralized colors
-COLOR_ACCENT   = "#4A9EFF"
-COLOR_SUCCESS  = "#3DBE7A"
-COLOR_ERROR    = "#FF5F5F"
-COLOR_NEUTRAL  = "#8A8A9A"
-COLOR_SURFACE  = "#1E1E2E"
-COLOR_SURFACE2 = "#2A2A3E"
-COLOR_TEXT     = "#E8E8F0"
-COLOR_TEXT2    = "#A0A0B8"
-
-POS_LABELS = {
-    "N":   "Noun",
-    "V":   "Verb",
-    "ADJ": "Adjective",
-    "ADV": "Adverb",
-    "PRO": "Pronoun",
-    "DET": "Determiner",
-    "PRE": "Preposition",
-    "CON": "Conjunction",
-    "INT": "Interjection",
-    "?":   "Undefined",
-}
-
-
 class TabDictionary(ctk.CTkFrame):
     """Main dictionary tab: search and display word definitions."""
 
@@ -143,7 +120,7 @@ class TabDictionary(ctk.CTkFrame):
         self.grid_rowconfigure(1, weight=1)
 
         # --- Search bar ---
-        search_bar = ctk.CTkFrame(self, fg_color=COLOR_SURFACE, corner_radius=0,
+        search_bar = ctk.CTkFrame(self, fg_color=COLORS["SURFACE"], corner_radius=0,
                                   border_width=1, border_color="#2E2E42")
         search_bar.grid(row=0, column=0, sticky="ew", padx=20, pady=(20, 10))
         search_bar.grid_columnconfigure(0, weight=1)
@@ -153,10 +130,10 @@ class TabDictionary(ctk.CTkFrame):
             search_bar,
             textvariable=self._search_var,
             placeholder_text="Search for a word...",
-            font=ctk.CTkFont(family="Georgia", size=15),
-            fg_color=COLOR_SURFACE2,
+            font=ctk.CTkFont(family=FONTS["SEARCH_BAR"][0], size=FONTS["SEARCH_BAR"][1]),
+            fg_color=COLORS["SURFACE2"],
             border_color="#3A3A5C",
-            text_color=COLOR_TEXT,
+            text_color=COLORS["TEXT"],
             height=44,
             corner_radius=0,
         )
@@ -167,8 +144,8 @@ class TabDictionary(ctk.CTkFrame):
         self._btn_search = ctk.CTkButton(
             search_bar,
             text="Search",
-            font=ctk.CTkFont(family="Georgia", size=14, weight="bold"),
-            fg_color=COLOR_ACCENT,
+            font=ctk.CTkFont(family=FONTS["SEARCH_BTN"][0], size=FONTS["SEARCH_BTN"][1], weight=FONTS["SEARCH_BTN"][2]),
+            fg_color=COLORS["ACCENT"],
             hover_color="#3A8EEF",
             text_color="white",
             height=44,
@@ -179,7 +156,7 @@ class TabDictionary(ctk.CTkFrame):
         self._btn_search.grid(row=0, column=1, padx=(0, 16), pady=12)
 
         # --- Results area ---
-        results_frame = ctk.CTkFrame(self, fg_color=COLOR_SURFACE, corner_radius=0,
+        results_frame = ctk.CTkFrame(self, fg_color=COLORS["SURFACE"], corner_radius=0,
                                      border_width=1, border_color="#2E2E42")
         results_frame.grid(row=1, column=0, sticky="nsew", padx=20, pady=(0, 10))
         results_frame.grid_columnconfigure(0, weight=1)
@@ -189,8 +166,8 @@ class TabDictionary(ctk.CTkFrame):
         self._title_label = ctk.CTkLabel(
             results_frame,
             text="",
-            font=ctk.CTkFont(family="Georgia", size=26, weight="bold"),
-            text_color=COLOR_TEXT,
+            font=ctk.CTkFont(family=FONTS["WORD_TITLE"][0], size=FONTS["WORD_TITLE"][1], weight=FONTS["WORD_TITLE"][2]),
+            text_color=COLORS["TEXT"],
             anchor="w",
         )
         self._title_label.grid(row=0, column=0, sticky="ew", padx=20, pady=(16, 4))
@@ -198,9 +175,9 @@ class TabDictionary(ctk.CTkFrame):
         # Scrollable definitions area
         self._def_frame = ctk.CTkScrollableFrame(
             results_frame,
-            fg_color=COLOR_SURFACE,
+            fg_color=COLORS["SURFACE"],
             scrollbar_button_color="#3A3A5C",
-            scrollbar_button_hover_color=COLOR_ACCENT,
+            scrollbar_button_hover_color=COLORS["ACCENT"],
             corner_radius=0,
         )
         self._def_frame.grid(row=1, column=0, sticky="nsew", padx=4, pady=4)
@@ -218,8 +195,8 @@ class TabDictionary(ctk.CTkFrame):
         self._status_label = ctk.CTkLabel(
             footer,
             text="",
-            font=ctk.CTkFont(family="Georgia", size=12),
-            text_color=COLOR_NEUTRAL,
+            font=ctk.CTkFont(family=FONTS["STATUS_LABEL"][0], size=FONTS["STATUS_LABEL"][1]),
+            text_color=COLORS["NEUTRAL"],
             anchor="w",
         )
         self._status_label.grid(row=0, column=0, sticky="w")
@@ -231,10 +208,10 @@ class TabDictionary(ctk.CTkFrame):
         self._btn_copy = ctk.CTkButton(
             btn_group,
             text="Copy",
-            font=ctk.CTkFont(family="Georgia", size=13),
-            fg_color=COLOR_SURFACE2,
+            font=ctk.CTkFont(family=FONTS["BTN"][0], size=FONTS["BTN"][1]),
+            fg_color=COLORS["SURFACE2"],
             hover_color="#3A3A5C",
-            text_color=COLOR_TEXT,
+            text_color=COLORS["TEXT"],
             height=38,
             width=100,
             corner_radius=0,
@@ -246,8 +223,8 @@ class TabDictionary(ctk.CTkFrame):
         self._btn_add = ctk.CTkButton(
             btn_group,
             text="+ Add to lexicon",
-            font=ctk.CTkFont(family="Georgia", size=13, weight="bold"),
-            fg_color=COLOR_SUCCESS,
+            font=ctk.CTkFont(family=FONTS["ADD_BTN"][0], size=FONTS["ADD_BTN"][1], weight=FONTS["ADD_BTN"][2]),
+            fg_color=COLORS["SUCCESS"],
             hover_color="#2EAA6A",
             text_color="white",
             height=38,
@@ -285,22 +262,34 @@ class TabDictionary(ctk.CTkFrame):
             self._btn_copy.configure(state="disabled")
             self._show_not_found(word)
 
+    # ------------------------------------------------------------------
+    # Copy logic (clipboard)
+    # ------------------------------------------------------------------
+
     def _format_for_clipboard(self) -> str:
         """Formats the current word and its definitions as plain text for the clipboard."""
         if not self._current_word or not self._current_lexemes:
             return ""
 
         pos_labels = {
-            "N": "Noun", "V": "Verb", "ADJ": "Adjective", "ADV": "Adverb",
-            "PRO": "Pronoun", "DET": "Determiner", "PRE": "Preposition",
-            "CON": "Conjunction", "INT": "Interjection", "?": "Undefined",
+            "N": "Nom", "V": "Verbe", "ADJ": "Adjectif", "ADV": "Adverbe",
+            "PRO": "Pronom", "DET": "Déterminant", "PRE": "Preposition",
+            "CON": "Conjonction", "INT": "Interjection", "?": "Non défini",
         }
 
         lines = [self._current_word.capitalize(), ""]
 
+        gender_labels = {"m": "masc.", "f": "fém.", "e": "épicène"}
+
         for lexeme in self._current_lexemes:
-            pos = pos_labels.get(lexeme.get("pos", "?"), "?")
-            lines.append(f"[{pos}]")
+            pos    = lexeme.get("pos", "?")
+            pos_fr = pos_labels.get(pos, "?")
+            gender = lexeme.get("gender")
+
+            if pos == "N" and gender in gender_labels:
+                lines.append(f"[{pos_fr} — {gender_labels[gender]}]")
+            else:
+                lines.append(f"[{pos_fr}]")
 
             for i, defn in enumerate(lexeme.get("definitions", []), 1):
                 gloss = defn.get("gloss", "")
@@ -336,14 +325,14 @@ class TabDictionary(ctk.CTkFrame):
         if success:
             self._status_label.configure(
                 text="Copied to clipboard.",
-                text_color=COLOR_SUCCESS,
+                text_color=COLORS["SUCCESS"],
             )
             # Reset status after 3 seconds
             self.after(3000, lambda: self._status_label.configure(text=""))
         else:
             self._status_label.configure(
                 text="Clipboard unavailable.",
-                text_color=COLOR_ERROR,
+                text_color=COLORS["ERROR"],
             )
             _show_clipboard_help()
 
@@ -354,7 +343,7 @@ class TabDictionary(ctk.CTkFrame):
         if self.lexicon.contains(self._current_word):
             self._status_label.configure(
                 text=f"'{self._current_word}' is already in your lexicon.",
-                text_color=COLOR_NEUTRAL,
+                text_color=COLORS["NEUTRAL"],
             )
             return
 
@@ -362,13 +351,13 @@ class TabDictionary(ctk.CTkFrame):
         if ok:
             self._status_label.configure(
                 text=f"'{ self._current_word}' added to the lexicon.",
-                text_color=COLOR_SUCCESS,
+                text_color=COLORS["SUCCESS"],
             )
             self._btn_add.configure(state="disabled")
         else:
             self._status_label.configure(
                 text="Error while adding word.",
-                text_color=COLOR_ERROR,
+                text_color=COLORS["ERROR"],
             )
 
     # ------------------------------------------------------------------
@@ -384,8 +373,8 @@ class TabDictionary(ctk.CTkFrame):
         ctk.CTkLabel(
             self._def_frame,
             text="Enter a word in the search field above.",
-            font=ctk.CTkFont(family="Arial", size=14),
-            text_color=COLOR_NEUTRAL,
+            font=ctk.CTkFont(family=FONTS["WELCOME_LABEL"][0], size=FONTS["WELCOME_LABEL"][1]),
+            text_color=COLORS["NEUTRAL"],
             anchor="center",
             justify="center",
         ).grid(row=0, column=0, sticky="ew", padx=16, pady=(60, 20))
@@ -399,8 +388,8 @@ class TabDictionary(ctk.CTkFrame):
             ctk.CTkLabel(
                 self._def_frame,
                 text="No similar words found. Check the spelling.",
-                font=ctk.CTkFont(family="Georgia", size=14),
-                text_color=COLOR_ERROR,
+                font=ctk.CTkFont(family=FONTS["WELCOME_LABEL"][0], size=FONTS["WELCOME_LABEL"][1]),
+                text_color=COLORS["ERROR"],
                 anchor="w",
             ).grid(row=0, column=0, sticky="w", padx=16, pady=20)
             return
@@ -408,8 +397,8 @@ class TabDictionary(ctk.CTkFrame):
         ctk.CTkLabel(
             self._def_frame,
             text="Did you mean...",
-            font=ctk.CTkFont(family="Georgia", size=13),
-            text_color=COLOR_NEUTRAL,
+            font=ctk.CTkFont(family=FONTS["WELCOME_LABEL"][0], size=FONTS["WELCOME_LABEL"][1]),
+            text_color=COLORS["NEUTRAL"],
             anchor="w",
         ).grid(row=0, column=0, sticky="w", padx=16, pady=(16, 8))
 
@@ -417,10 +406,10 @@ class TabDictionary(ctk.CTkFrame):
             ctk.CTkButton(
                 self._def_frame,
                 text=suggestion,
-                font=ctk.CTkFont(family="Georgia", size=14),
-                fg_color=COLOR_SURFACE2,
+                font=ctk.CTkFont(family=FONTS["SUGGESTIONS"][0], size=FONTS["SUGGESTIONS"][1]),
+                fg_color=COLORS["SURFACE2"],
                 hover_color="#3A3A5C",
-                text_color=COLOR_ACCENT,
+                text_color=COLORS["ACCENT"],
                 height=34,
                 anchor="w",
                 corner_radius=0,
@@ -439,17 +428,36 @@ class TabDictionary(ctk.CTkFrame):
             pos = lexeme.get("pos", "?")
             pos_label = POS_LABELS.get(pos, pos)
 
-            # POS badge
+            # POS badge + optional gender badge (for nouns)
+            gender     = lexeme.get("gender")   # 'm', 'f', 'e', or None
+            show_gender = (pos == "N" and gender in GENDER_LABELS)
+
+            badge_row = ctk.CTkFrame(self._def_frame, fg_color="transparent")
+            badge_row.grid(row=row, column=0, sticky="w", padx=16, pady=(16, 4))
+            row += 1
+
             ctk.CTkLabel(
-                self._def_frame,
+                badge_row,
                 text=f"  {pos_label}  ",
-                font=ctk.CTkFont(family="Georgia", size=11, weight="bold"),
+                font=ctk.CTkFont(family=FONTS["BADGE"][0], size=FONTS["BADGE"][1], weight=FONTS["BADGE"][2]),
                 fg_color="#3A3A5C",
-                text_color=COLOR_ACCENT,
+                text_color=COLORS["ACCENT"],
                 corner_radius=0,
                 height=22,
-            ).grid(row=row, column=0, sticky="w", padx=16, pady=(16, 4))
-            row += 1
+            ).pack(side="left", padx=(0, 4))
+
+            if show_gender:
+                gender_text  = GENDER_LABELS[gender]
+                gender_color = GENDER_COLORS[gender]
+                ctk.CTkLabel(
+                    badge_row,
+                    text=f"  {gender_text}  ",
+                    font=ctk.CTkFont(family=FONTS["BADGE"][0], size=FONTS["BADGE"][1], weight=FONTS["BADGE"][2]),
+                    fg_color="#2A2A3A",
+                    text_color=gender_color,
+                    corner_radius=0,
+                    height=22,
+                ).pack(side="left")
 
             for i, defn in enumerate(lexeme.get("definitions", []), 1):
                 row = self._show_definition_item(row, i, defn, level=0)
@@ -480,7 +488,7 @@ class TabDictionary(ctk.CTkFrame):
             ctk.CTkLabel(
                 self._def_frame,
                 text=tag_str,
-                font=ctk.CTkFont(family="Georgia", size=11, slant="italic"),
+                font=ctk.CTkFont(family=FONTS["TAG"][0], size=FONTS["TAG"][1], slant=FONTS["TAG"][3]),
                 text_color="#7A8AB8",
                 anchor="w",
             ).grid(row=row, column=0, sticky="w", padx=left_pad + 20, pady=(4, 0))
@@ -490,19 +498,21 @@ class TabDictionary(ctk.CTkFrame):
         def_row.grid(row=row, column=0, sticky="ew", padx=left_pad, pady=(2, 2))
         def_row.grid_columnconfigure(1, weight=1)
 
+        # Prefix number
         ctk.CTkLabel(
             def_row,
             text=prefix,
-            font=ctk.CTkFont(family="Georgia", size=14, weight="bold"),
-            text_color=COLOR_ACCENT,
+            font=ctk.CTkFont(family=FONTS["PREFIX_DEF"][0], size=FONTS["PREFIX_DEF"][1], weight=FONTS["PREFIX_DEF"][2]),
+            text_color=COLORS["ACCENT"],
             width=30, anchor="ne",
         ).grid(row=0, column=0, sticky="ne", padx=(0, 6))
 
+        # Definition
         ctk.CTkLabel(
             def_row,
             text=gloss,
-            font=ctk.CTkFont(family="Georgia", size=14),
-            text_color=COLOR_TEXT,
+            font=ctk.CTkFont(family=FONTS["DEFINITION"][0], size=FONTS["DEFINITION"][1]),
+            text_color=COLORS["TEXT"],
             wraplength=560, anchor="nw", justify="left",
         ).grid(row=0, column=1, sticky="nw")
         row += 1
@@ -512,8 +522,8 @@ class TabDictionary(ctk.CTkFrame):
             ctk.CTkLabel(
                 self._def_frame,
                 text=f"  \"{ex}\"",
-                font=ctk.CTkFont(family="Georgia", size=12, slant="italic"),
-                text_color=COLOR_TEXT2,
+                font=ctk.CTkFont(family=FONTS["EXAMPLE"][0], size=FONTS["EXAMPLE"][1], slant=FONTS["EXAMPLE"][3]),
+                text_color=COLORS["TEXT2"],
                 wraplength=540, anchor="w", justify="left",
             ).grid(row=row, column=0, sticky="w", padx=left_pad + 20, pady=(1, 1))
             row += 1
@@ -541,5 +551,5 @@ class TabDictionary(ctk.CTkFrame):
         self._btn_copy.configure(state="normal")
         self._status_label.configure(
             text=f"'{word}' is already in your lexicon.",
-            text_color=COLOR_NEUTRAL,
+            text_color=COLORS["NEUTRAL"],
         )
