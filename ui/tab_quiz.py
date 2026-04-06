@@ -11,6 +11,8 @@ import customtkinter as ctk
 from core.config import FONTS, COLORS, POS_LABELS, GENDER_LABELS, GENDER_COLORS
 
 # Card sizing
+# The card width is dynamically calculated as a fraction of the central frame width,
+# but constrained within a reasonable range to maintain readability.
 CARD_RATIO   = 0.65    # fraction of the central frame width
 CARD_MIN     = 400     # minimum card width in pixels
 CARD_MAX     = 1000    # maximum card width in pixels
@@ -27,10 +29,6 @@ def _card_fonts(card_width: int) -> dict:
         return {"word": 32, "subtitle": 13, "body": 13, "btn": 14, "pos": 10}
     else:
         return {"word": 42, "subtitle": 15, "body": 15, "btn": 16, "pos": 11}
-
-
-"""GENDER_LABELS = {"m": "masc.", "f": "fém.", "e": "épicène"}
-GENDER_COLORS = {"m": "#4A9EFF", "f": "#FF7EB3", "e": "#A78BFA"}"""
 
 class TabQuiz(ctk.CTkFrame):
     """Vocabulary quiz tab."""
@@ -76,6 +74,7 @@ class TabQuiz(ctk.CTkFrame):
         )
         self._progress_label.pack(side="left", padx=4, pady=12)
 
+        # Restart button
         self._btn_restart = ctk.CTkButton(
             header, text="Restart",
             font=ctk.CTkFont(family=FONTS["BTN"][0], size=FONTS["BTN"][1]),
@@ -124,6 +123,7 @@ class TabQuiz(ctk.CTkFrame):
     # ------------------------------------------------------------------
 
     def _clear_frame(self):
+        """Removes all widgets from the central frame."""
         for w in self._central_frame.winfo_children():
             w.destroy()
 
@@ -155,11 +155,13 @@ class TabQuiz(ctk.CTkFrame):
             text_color=COLORS["TEXT2"], justify="center",
         ).pack(pady=(0, 16), padx=48)
 
+        # Only show the start button if there are words to practice
         if not is_empty:
+            # --- Start quiz button ---
             ctk.CTkButton(
                 frame, text="Start quiz",
                 font=ctk.CTkFont(family=FONTS["QUIZ_START"][0], size=FONTS["QUIZ_START"][1], weight=FONTS["QUIZ_START"][2]),
-                fg_color=COLORS["ACCENT"], hover_color="#3A8EEF",
+                fg_color=COLORS["ACCENT"], hover_color=COLORS["HOVER"],
                 text_color="white", height=44, width=200, corner_radius=0,
                 command=self._start_session,
             ).pack(pady=(0, 32))
@@ -216,7 +218,7 @@ class TabQuiz(ctk.CTkFrame):
 
         # --- Card ---
         card_color  = COLORS["CARD_WORD"]  if self._show_word_side else COLORS["CARD_DEF"]
-        card_border = COLORS["CARD_WORD_BORDER"] if self._show_word_side else COLORS["CARD_DEF_BORDER"]
+        card_border = COLORS["CARD_WORD_SIDE"] if self._show_word_side else COLORS["CARD_DEF_SIDE"]
 
         self._card = ctk.CTkFrame(
             wrapper,
@@ -267,6 +269,7 @@ class TabQuiz(ctk.CTkFrame):
             text_color="#A8D0FF",
         ).grid(row=1, column=0, pady=(4, pad), padx=pad)
 
+        # --- See answer button ---
         btn_w = max(140, self._card_width // 4)
         ctk.CTkButton(
             parent, text="See the answer",
@@ -293,6 +296,7 @@ class TabQuiz(ctk.CTkFrame):
             row=1, column=0, sticky="ew", padx=pad, pady=(0, 8)
         )
 
+        # Part of speech
         row = 2
         for lexeme in entry.get("lexemes", []):
             pos_label = POS_LABELS.get(lexeme.get("pos", "?"), "?")
@@ -307,7 +311,7 @@ class TabQuiz(ctk.CTkFrame):
             ctk.CTkLabel(
                 badge_row, text=f"  {pos_label}  ",
                 font=ctk.CTkFont(family="Arial", size=fonts["pos"], weight="bold"),
-                fg_color="#2A5A3A", text_color="#80C8A0",
+                fg_color=COLORS["CARD_BADGE"], text_color=COLORS["CARD_BADGE_TXT"],
                 corner_radius=0, height=20,
             ).pack(side="left", padx=(0, 4))
 
@@ -316,10 +320,11 @@ class TabQuiz(ctk.CTkFrame):
                     badge_row,
                     text=f"  {GENDER_LABELS[gender]}  ",
                     font=ctk.CTkFont(family="Arial", size=fonts["pos"], weight="bold"),
-                    fg_color="#1A2A1A", text_color=GENDER_COLORS[gender],
+                    fg_color=COLORS["CARD_BADGE"], text_color=GENDER_COLORS[gender],
                     corner_radius=0, height=20,
                 ).pack(side="left")
 
+            # Definitions
             for i, defn in enumerate(lexeme.get("definitions", [])[:3], 1):
                 gloss = defn.get("gloss", "")
                 def_row = ctk.CTkFrame(parent, fg_color="transparent")
@@ -340,6 +345,7 @@ class TabQuiz(ctk.CTkFrame):
                 ).grid(row=0, column=1, sticky="nw")
                 row += 1
 
+        # --- See word button ---
         btn_w = max(140, self._card_width // 4)
         ctk.CTkButton(
             parent, text="See the word",
@@ -357,6 +363,8 @@ class TabQuiz(ctk.CTkFrame):
     # ------------------------------------------------------------------
 
     def _start_session(self):
+        """Initializes a new quiz session by shuffling the lexicon words 
+        and resetting progress."""
         if self.lexicon.is_empty():
             self._show_waiting_screen()
             return
@@ -368,6 +376,8 @@ class TabQuiz(ctk.CTkFrame):
         self._next_word()
 
     def _next_word(self):
+        """Advances to the next word in the session. If no words remain, 
+        shows the session end screen."""
         if not self._session_words:
             self._show_session_end()
             return
@@ -379,10 +389,12 @@ class TabQuiz(ctk.CTkFrame):
         self._show_card()
 
     def _flip_card(self):
+        """Flips the card to show the other side (word <-> definition)."""
         self._show_word_side = not self._show_word_side
         self._show_card()
 
     def _update_progress(self):
+        """Updates the progress label to show how many words have been reviewed."""
         total = len(self._seen_words) + len(self._session_words)
         self._progress_label.configure(text=f"{len(self._seen_words)} / {total}")
 
@@ -390,7 +402,8 @@ class TabQuiz(ctk.CTkFrame):
     # Public API
     # ------------------------------------------------------------------
 
-    def rafraichir(self):
-        """Called when the lexicon changes - resets the screen."""
+    def refresh(self):
+        """Called when the lexicon changes - resets the screen.
+         If the current session is active but the current word was removed, we also reset."""
         if self.lexicon.is_empty() or not self._current_word:
             self._show_waiting_screen()

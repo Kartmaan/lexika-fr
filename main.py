@@ -13,8 +13,8 @@ Custom paths:
     python main.py --db /path/to/dict.db --lexicon /path/to/lexicon.json
 
 Author  : Kartmaan
-Date    : 2026-03-31
-Version : 1.3.0
+Date    : 2026-04-06
+Version : 1.4.0
 """
 
 import sys
@@ -25,16 +25,23 @@ def main():
     parser = argparse.ArgumentParser(
         description="Lexika - French dictionary and personal lexicon."
     )
+
+    # Default paths point to the expected locations within the project 
+    # structure, but can be overridden by the user if needed.
     parser.add_argument(
         "--db",
         default=str(Path(__file__).parent / "data" / "french_dict.db"),
         help="Path to the SQLite dictionary database"
     )
+
+    # The lexicon path is also customizable, allowing users to specify 
+    # where their
     parser.add_argument(
         "--lexicon",
         default=str(Path(__file__).parent / "data" / "lexicon.json"),
         help="Path to the personal lexicon JSON file"
     )
+    
     args = parser.parse_args()
     db_path = Path(args.db)
 

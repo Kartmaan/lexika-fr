@@ -138,6 +138,7 @@ The personal lexicon, laid out in two columns.
 - Saved words appear in alphabetical order as clickable tiles
 - Words sourced from the dictionary appear in blue
 - Custom words appear in purple
+- A search field allows you to filter the list by typing part of a word
 
 **Right column - definitions**
 - Clicking a tile immediately displays the full definition in the right column

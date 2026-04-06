@@ -5,11 +5,11 @@ Main window: CustomTkinter setup, TabView, coordination between the three tabs.
 """
 
 import sys
+from pathlib import Path
 import customtkinter as ctk
 from PIL import Image, ImageTk
-from pathlib import Path
 
-from core.config import FONTS
+from core.config import FONTS, COLORS
 from core import Dictionary, Lexicon
 from ui.tab_dictionary import TabDictionary
 from ui.tab_lexicon import TabLexicon
@@ -41,7 +41,7 @@ class App(ctk.CTk):
         self.title(self.TITLE)
         self.geometry("1060x700")
         self.minsize(self.MIN_WIDTH, self.MIN_HEIGHT)
-        self.configure(fg_color="#12121C")
+        self.configure(fg_color=COLORS["BG"])
 
         # --- Icon (must be applied before building UI) ---
         self._apply_icon()
@@ -76,6 +76,7 @@ class App(ctk.CTk):
         if icon is None:
             return
 
+        # Windows can use .ico directly, but Linux/macOS require Pillow to convert to PhotoImage.
         try:
             if platform == "win32" and icon.suffix == ".ico":
                 # Windows: iconbitmap() handles .ico natively
@@ -101,11 +102,15 @@ class App(ctk.CTk):
     # ------------------------------------------------------------------
 
     def _build_ui(self):
+        """Constructs the main UI layout:
+          - Title banner
+          - TabView with 4 tabs (Dictionary, Lexicon, Quiz, Analyzer)
+        """
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=1)
 
         # Title banner
-        banner = ctk.CTkFrame(self, fg_color="#1A1A2E", corner_radius=0, height=52)
+        banner = ctk.CTkFrame(self, fg_color=COLORS["TAB_BTN_FG"], corner_radius=0, height=52)
         banner.grid(row=0, column=0, sticky="ew")
         banner.grid_propagate(False)
         banner.grid_columnconfigure(0, weight=1)
@@ -114,20 +119,20 @@ class App(ctk.CTk):
             banner,
             text="Lexika - French",
             font=ctk.CTkFont(family=FONTS["TITLE"][0], size=FONTS["TITLE"][1], weight=FONTS["TITLE"][2]),
-            text_color="#E8E8F0",
+            text_color=COLORS["TEXT"],
         ).grid(row=0, column=0, sticky="w", padx=24, pady=10)
 
         # Main TabView
         self._tabview = ctk.CTkTabview(
             self,
-            fg_color="#1E1E2E",
-            segmented_button_fg_color="#1A1A2E",
-            segmented_button_selected_color="#4A9EFF",
-            segmented_button_selected_hover_color="#3A8EEF",
-            segmented_button_unselected_color="#1A1A2E",
-            segmented_button_unselected_hover_color="#2A2A3E",
-            text_color="#E8E8F0",
-            text_color_disabled="#5A5A6A",
+            fg_color=COLORS["TAB_FG"],
+            segmented_button_fg_color=COLORS["TAB_BTN_FG"],
+            segmented_button_selected_color=COLORS["TAB_BTN_SELECT"],
+            segmented_button_selected_hover_color=COLORS["TAB_BTN_HOVER"],
+            segmented_button_unselected_color=COLORS["TAB_BTN_FG"],
+            segmented_button_unselected_hover_color=COLORS["SURFACE2"],
+            text_color=COLORS["TAB_TEXT"],
+            text_color_disabled=COLORS["TAB_TEXT_DIS"],
             corner_radius=0,
             border_width=0
         )
@@ -139,12 +144,13 @@ class App(ctk.CTk):
         )
         self._tabview.grid(row=1, column=0, sticky="nsew", padx=16, pady=(8, 16))
 
-        # Create the three tabs
+        # Create the tabs
         self._tabview.add("Dictionary")
         self._tabview.add("Lexicon")
         self._tabview.add("Quiz")
         self._tabview.add("Analyzer")
 
+        # Configure each tab's internal grid to expand content, and set button sizes
         for name in ["Dictionary", "Lexicon", "Quiz", "Analyzer"]:
             self._tabview._segmented_button._buttons_dict[name].configure(
                 width=280, height=44
@@ -153,6 +159,7 @@ class App(ctk.CTk):
             self._tabview.tab(name).grid_rowconfigure(0, weight=1)
 
         # Instantiate tab contents
+        # Each tab receives the necessary data and callbacks for cross-tab coordination.
         self._tab_dict = TabDictionary(
             self._tabview.tab("Dictionary"),
             dictionary=self.dictionary,
@@ -160,19 +167,24 @@ class App(ctk.CTk):
         )
         self._tab_dict.grid(row=0, column=0, sticky="nsew")
 
+        # The Lexicon tab needs a callback to navigate to the Dictionary tab when a word is clicked.
         self._tab_lexicon = TabLexicon(
             self._tabview.tab("Lexicon"),
             lexicon=self.lexicon,
-            on_voir_dans_dico=self._navigate_to_dict,
+            view_in_dict=self._navigate_to_dict,
         )
         self._tab_lexicon.grid(row=0, column=0, sticky="nsew")
 
+        # The Quiz tab also needs access to the lexicon to generate quizzes, 
+        # but does not require cross-tab callbacks.
         self._tab_quiz = TabQuiz(
             self._tabview.tab("Quiz"),
             lexicon=self.lexicon,
         )
         self._tab_quiz.grid(row=0, column=0, sticky="nsew")
 
+        # The Analyzer tab needs access to the dictionary for word analysis, 
+        # and a callback to navigate to the Dictionary tab when a word is clicked.
         self._tab_analyzer = TabAnalyzer(
             self._tabview.tab("Analyzer"),
             dictionary=self.dictionary,
@@ -181,6 +193,9 @@ class App(ctk.CTk):
         self._tab_analyzer.grid(row=0, column=0, sticky="nsew")
 
         # Cross-tab refresh on tab change
+        # Whenever the user switches tabs, we check if the new tab is Lexicon or Quiz 
+        # and call their rafraichir() method to update their content based on the current 
+        # state of the lexicon.
         self._tabview.configure(command=self._on_tab_change)
 
     # ------------------------------------------------------------------
@@ -188,12 +203,14 @@ class App(ctk.CTk):
     # ------------------------------------------------------------------
 
     def _on_tab_change(self):
-        """Synchronizes lexicon-dependent tabs on every tab switch."""
+        """Synchronizes lexicon-dependent tabs on every tab switch.
+        This ensures that if the user modifies their lexicon, all tabs reflect the changes
+        as soon as they navigate to them."""
         tab = self._tabview.get()
         if tab == "Lexicon":
-            self._tab_lexicon.rafraichir()
+            self._tab_lexicon.refresh()
         elif tab == "Quiz":
-            self._tab_quiz.rafraichir()
+            self._tab_quiz.refresh()
 
     def _navigate_to_dict(self, word: str, entry: dict):
         """
@@ -217,5 +234,7 @@ class App(ctk.CTk):
     # ------------------------------------------------------------------
 
     def _quit(self):
+        """Ensures the dictionary connection is closed before exiting the application.
+        """
         self.dictionary.close()
         self.destroy()

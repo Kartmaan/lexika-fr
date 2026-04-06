@@ -79,7 +79,6 @@ def _validate_db(path: Path) -> tuple[bool, str]:
     except Exception as e:
         return False, f"Validation error: {e}"
 
-
 # ---------------------------------------------------------------------------
 # Setup window
 # ---------------------------------------------------------------------------
@@ -186,6 +185,7 @@ class SetupWindow(ctk.CTk):
             text_color=COLORS["NEUTRAL"], anchor="w",
         ).grid(row=0, column=0, sticky="w")
 
+        # --- Import button ---
         self._btn_import = ctk.CTkButton(
             imp_block, text="Import",
             font=ctk.CTkFont(family=FONTS["BTN"][0], size=FONTS["BTN"][1], weight=FONTS["BTN"][2]),
@@ -210,6 +210,8 @@ class SetupWindow(ctk.CTk):
     # ------------------------------------------------------------------
 
     def _import_db(self):
+        """Opens a file dialog to select a .db file, validates it, and if valid, 
+        copies it to the data directory."""
         path = filedialog.askopenfilename(
             title="Select dictionary file",
             filetypes=[("SQLite database", "*.db"), ("All files", "*.*")],
@@ -251,6 +253,8 @@ class SetupWindow(ctk.CTk):
     # ------------------------------------------------------------------
 
     def _start_download(self):
+        """Initiates the download process in a separate thread and updates 
+        the UI accordingly."""
         if self._download_in_progress:
             return
 
@@ -274,6 +278,7 @@ class SetupWindow(ctk.CTk):
             tmp = DB_DEST.with_suffix(".tmp")
 
             def hook(count, block_size, total_size):
+                """Hook function to update progress during download."""
                 if total_size > 0:
                     downloaded = count * block_size
                     progress = min(downloaded / total_size, 1.0)
@@ -293,6 +298,8 @@ class SetupWindow(ctk.CTk):
             self.after(0, self._download_failed, str(e))
 
     def _update_progress(self, progress: float, mb_dl: float, mb_tot: float):
+        """Updates the progress bar and status label with the current 
+        download progress."""
         self._progress_bar.stop()
         self._progress_bar.configure(mode="determinate")
         self._progress_bar.set(progress)
@@ -302,6 +309,7 @@ class SetupWindow(ctk.CTk):
         )
 
     def _download_success(self):
+        """Called when the download completes successfully."""
         self._progress_bar.set(1.0)
         self._status_label.configure(
             text="Download complete - launching Lexika...", text_color=COLORS["SUCCESS"]
@@ -312,6 +320,7 @@ class SetupWindow(ctk.CTk):
         self.after(1200, self._launch_app)
 
     def _download_failed(self, error: str):
+        """Called when the download fails with an error message."""
         self._download_in_progress = False
         self._progress_bar.stop()
         self._progress_bar.set(0)
@@ -329,6 +338,7 @@ class SetupWindow(ctk.CTk):
     # ------------------------------------------------------------------
 
     def _launch_app(self):
+        """Closes the setup window and launches the main application."""
         self.destroy()
         from ui.app import App
         app = App(

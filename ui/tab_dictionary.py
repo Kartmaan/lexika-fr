@@ -11,41 +11,65 @@ from core.config import FONTS, COLORS, POS_LABELS, GENDER_LABELS, GENDER_COLORS
 
 def _bind_mousewheel(scrollable_frame):
     """Enables mouse wheel scrolling on a CTkScrollableFrame (Linux + Windows)."""
-    canvas = scrollable_frame._parent_canvas
+    canvas = scrollable_frame._parent_canvas # access the internal canvas of the CTkScrollableFrame
 
     def scroll(delta):
+        """Scrolls the canvas by a given delta (positive or negative integer)
+
+        Args:
+            delta (_type_): Number of units to scroll. Positive for down, negative for up.
+        """
         canvas.yview_scroll(delta, "units")
 
     def on_enter(_):
+        """Binds mouse wheel events when the mouse enters the frame.
+
+        Args:
+            _ (_type_): The event object (not used).
+        """
         scrollable_frame.bind_all("<Button-4>",   lambda e: scroll(-1))
         scrollable_frame.bind_all("<Button-5>",   lambda e: scroll(1))
         scrollable_frame.bind_all("<MouseWheel>", lambda e: scroll(int(-1 * e.delta / 120)))
 
     def on_leave(_):
+        """Unbinds mouse wheel events when the mouse leaves the frame.
+        
+        Args:
+            _ (_type_): The event object (not used).
+        """
+
         scrollable_frame.unbind_all("<Button-4>")
         scrollable_frame.unbind_all("<Button-5>")
         scrollable_frame.unbind_all("<MouseWheel>")
 
+    # Bind enter and leave events to the scrollable frame to manage mouse wheel bindings
     scrollable_frame.bind("<Enter>", on_enter, add="+")
     scrollable_frame.bind("<Leave>", on_leave, add="+")
 
 
 def _configure_entry(entry):
-    """Fixes Ctrl+A and paste-over-selection for a CTkEntry on Linux."""
+    """Fixes Ctrl+A and paste-over-selection for a CTkEntry on Linux.
+    On Linux, Ctrl+A does not select all text by default, and pasting 
+    while text is selected does not replace it. This function binds 
+    custom handlers to implement these expected behaviors."""
     inner = entry._entry
 
     def ctrl_a(e):
+        """Selects all text in the entry when Ctrl+A is pressed."""
         inner.select_range(0, "end")
         inner.icursor("end")
         return "break"
 
     def on_paste(e):
+        """When pasting, if there is a selection, delete it first 
+        to replace it with the clipboard content."""
         try:
             if inner.selection_present():
                 inner.delete("sel.first", "sel.last")
         except Exception:
             pass
 
+    # Bind the handlers to the internal entry widget
     inner.bind("<Control-a>", ctrl_a)
     inner.bind("<Control-A>", ctrl_a)
     inner.bind("<<Paste>>", on_paste, add="+")
@@ -102,6 +126,13 @@ class TabDictionary(ctk.CTkFrame):
     """Main dictionary tab: search and display word definitions."""
 
     def __init__(self, parent, dictionary, lexicon, **kwargs):
+        """Constructor for the TabDictionary frame.
+
+        Args:
+            parent (_type_): The parent widget (the tab frame).
+            dictionary (_type_): The dictionary object to query for word definitions.
+            lexicon (_type_): The lexicon object to manage saved words.
+        """
         super().__init__(parent, fg_color="transparent", **kwargs)
         self.dictionary = dictionary
         self.lexicon = lexicon
@@ -116,6 +147,7 @@ class TabDictionary(ctk.CTkFrame):
     # ------------------------------------------------------------------
 
     def _build_ui(self):
+        """Constructs the UI components of the dictionary tab."""
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=1)
 
@@ -125,14 +157,14 @@ class TabDictionary(ctk.CTkFrame):
         search_bar.grid(row=0, column=0, sticky="ew", padx=20, pady=(20, 10))
         search_bar.grid_columnconfigure(0, weight=1)
 
-        self._search_var = StringVar()
+        self._search_var = StringVar() # holds the current search query and is linked to the search entry
         self._search_entry = ctk.CTkEntry(
             search_bar,
             textvariable=self._search_var,
             placeholder_text="Search for a word...",
             font=ctk.CTkFont(family=FONTS["SEARCH_BAR"][0], size=FONTS["SEARCH_BAR"][1]),
             fg_color=COLORS["SURFACE2"],
-            border_color="#3A3A5C",
+            border_color=COLORS["DICT_ENTRY_BORDER"],
             text_color=COLORS["TEXT"],
             height=44,
             corner_radius=0,
@@ -141,12 +173,13 @@ class TabDictionary(ctk.CTkFrame):
         self._search_entry.bind("<Return>", lambda e: self._run_search())
         _configure_entry(self._search_entry)
 
+        # --- Search button ---
         self._btn_search = ctk.CTkButton(
             search_bar,
             text="Search",
             font=ctk.CTkFont(family=FONTS["SEARCH_BTN"][0], size=FONTS["SEARCH_BTN"][1], weight=FONTS["SEARCH_BTN"][2]),
             fg_color=COLORS["ACCENT"],
-            hover_color="#3A8EEF",
+            hover_color=COLORS["HOVER"],
             text_color="white",
             height=44,
             width=130,
@@ -176,7 +209,7 @@ class TabDictionary(ctk.CTkFrame):
         self._def_frame = ctk.CTkScrollableFrame(
             results_frame,
             fg_color=COLORS["SURFACE"],
-            scrollbar_button_color="#3A3A5C",
+            scrollbar_button_color=COLORS["SCROLLBAR"],
             scrollbar_button_hover_color=COLORS["ACCENT"],
             corner_radius=0,
         )
@@ -205,12 +238,13 @@ class TabDictionary(ctk.CTkFrame):
         btn_group = ctk.CTkFrame(footer, fg_color="transparent")
         btn_group.grid(row=0, column=1, sticky="e")
 
+        # --- Copy button ---
         self._btn_copy = ctk.CTkButton(
             btn_group,
             text="Copy",
             font=ctk.CTkFont(family=FONTS["BTN"][0], size=FONTS["BTN"][1]),
             fg_color=COLORS["SURFACE2"],
-            hover_color="#3A3A5C",
+            hover_color=COLORS["DICT_COPY_BTN_HOVER"],
             text_color=COLORS["TEXT"],
             height=38,
             width=100,
@@ -220,12 +254,13 @@ class TabDictionary(ctk.CTkFrame):
         )
         self._btn_copy.pack(side="left", padx=(0, 8))
 
+        # --- Add to lexicon button ---
         self._btn_add = ctk.CTkButton(
             btn_group,
             text="+ Add to lexicon",
             font=ctk.CTkFont(family=FONTS["ADD_BTN"][0], size=FONTS["ADD_BTN"][1], weight=FONTS["ADD_BTN"][2]),
             fg_color=COLORS["SUCCESS"],
-            hover_color="#2EAA6A",
+            hover_color=COLORS["DICT_ADD_BTN_HOVER"],
             text_color="white",
             height=38,
             width=180,
@@ -240,22 +275,24 @@ class TabDictionary(ctk.CTkFrame):
     # ------------------------------------------------------------------
 
     def _run_search(self):
+        """Executes a search query using the dictionary and updates 
+        the UI with results or suggestions."""
         word = self._search_var.get().strip()
         if not word:
             return
 
-        self._clear_definitions()
-        self._status_label.configure(text="")
+        self._clear_definitions() # clear previous results/suggestions
+        self._status_label.configure(text="") # clear status messages
 
         lexemes = self.dictionary.search(word)
 
-        if lexemes:
+        if lexemes: # valid word with definitions found
             self._current_word = word.lower()
             self._current_lexemes = lexemes
             self._show_definitions(word, lexemes)
             self._btn_add.configure(state="normal")
             self._btn_copy.configure(state="normal")
-        else:
+        else: # no exact match found - show suggestions and disable buttons
             self._current_word = None
             self._current_lexemes = None
             self._btn_add.configure(state="disabled")
@@ -271,23 +308,20 @@ class TabDictionary(ctk.CTkFrame):
         if not self._current_word or not self._current_lexemes:
             return ""
 
-        pos_labels = {
-            "N": "Nom", "V": "Verbe", "ADJ": "Adjectif", "ADV": "Adverbe",
-            "PRO": "Pronom", "DET": "Déterminant", "PRE": "Preposition",
-            "CON": "Conjonction", "INT": "Interjection", "?": "Non défini",
-        }
-
+        # Format: Word
+        #         [POS — Gender (for nouns)] 
+        #           1. Definition (tags)
+        #              "Example sentence"
         lines = [self._current_word.capitalize(), ""]
 
-        gender_labels = {"m": "masc.", "f": "fém.", "e": "épicène"}
-
+        # Iterate through lexemes to format each definition with its
         for lexeme in self._current_lexemes:
             pos    = lexeme.get("pos", "?")
-            pos_fr = pos_labels.get(pos, "?")
+            pos_fr = POS_LABELS.get(pos, "?")
             gender = lexeme.get("gender")
 
-            if pos == "N" and gender in gender_labels:
-                lines.append(f"[{pos_fr} — {gender_labels[gender]}]")
+            if pos == "N" and gender in GENDER_LABELS:
+                lines.append(f"[{pos_fr} — {GENDER_LABELS[gender]}]")
             else:
                 lines.append(f"[{pos_fr}]")
 
@@ -337,12 +371,13 @@ class TabDictionary(ctk.CTkFrame):
             _show_clipboard_help()
 
     def _add_to_lexicon(self):
+        """Adds the current word and its lexemes to the user's lexicon."""
         if not self._current_word or not self._current_lexemes:
             return
 
         if self.lexicon.contains(self._current_word):
             self._status_label.configure(
-                text=f"'{self._current_word}' is already in your lexicon.",
+                text=f"'{self._current_word.capitalize()}' is already in your lexicon.",
                 text_color=COLORS["NEUTRAL"],
             )
             return
@@ -350,7 +385,7 @@ class TabDictionary(ctk.CTkFrame):
         ok = self.lexicon.add_from_dictionary(self._current_word, self._current_lexemes)
         if ok:
             self._status_label.configure(
-                text=f"'{ self._current_word}' added to the lexicon.",
+                text=f"'{self._current_word.capitalize()}' added to the lexicon.",
                 text_color=COLORS["SUCCESS"],
             )
             self._btn_add.configure(state="disabled")
@@ -365,11 +400,13 @@ class TabDictionary(ctk.CTkFrame):
     # ------------------------------------------------------------------
 
     def _clear_definitions(self):
+        """Clears the definitions area and resets the title label."""
         for widget in self._def_frame.winfo_children():
             widget.destroy()
         self._title_label.configure(text="")
 
     def _show_welcome(self):
+        """Displays a welcome message when no search has been made."""
         ctk.CTkLabel(
             self._def_frame,
             text="Enter a word in the search field above.",
@@ -380,6 +417,7 @@ class TabDictionary(ctk.CTkFrame):
         ).grid(row=0, column=0, sticky="ew", padx=16, pady=(60, 20))
 
     def _show_not_found(self, word: str):
+        """Displays a 'not found' message and suggestions when a search yields no results."""
         self._title_label.configure(text=f"'{word}' not found")
 
         suggestions = self.dictionary.suggest(word)
@@ -407,9 +445,9 @@ class TabDictionary(ctk.CTkFrame):
                 self._def_frame,
                 text=suggestion,
                 font=ctk.CTkFont(family=FONTS["SUGGESTIONS"][0], size=FONTS["SUGGESTIONS"][1]),
-                fg_color=COLORS["SURFACE2"],
-                hover_color="#3A3A5C",
-                text_color=COLORS["ACCENT"],
+                fg_color=COLORS["DICT_SUGGEST_FRAME"],
+                hover_color=COLORS["DICT_SUGGEST_FRAME_HOVER"],
+                text_color=COLORS["DICT_SUGGEST_TEXT"],
                 height=34,
                 anchor="w",
                 corner_radius=0,
@@ -417,10 +455,13 @@ class TabDictionary(ctk.CTkFrame):
             ).grid(row=i + 1, column=0, sticky="w", padx=16, pady=3)
 
     def _search_suggestion(self, word: str):
+        """When a suggestion button is clicked, populate the search bar with 
+        the suggestion and run the search."""
         self._search_var.set(word)
         self._run_search()
 
     def _show_definitions(self, word: str, lexemes: list):
+        """Displays the definitions of a word in the definitions area."""
         self._title_label.configure(text=word.capitalize())
 
         row = 0
@@ -440,7 +481,7 @@ class TabDictionary(ctk.CTkFrame):
                 badge_row,
                 text=f"  {pos_label}  ",
                 font=ctk.CTkFont(family=FONTS["BADGE"][0], size=FONTS["BADGE"][1], weight=FONTS["BADGE"][2]),
-                fg_color="#3A3A5C",
+                fg_color=COLORS["BADGE"],
                 text_color=COLORS["ACCENT"],
                 corner_radius=0,
                 height=22,
@@ -453,7 +494,7 @@ class TabDictionary(ctk.CTkFrame):
                     badge_row,
                     text=f"  {gender_text}  ",
                     font=ctk.CTkFont(family=FONTS["BADGE"][0], size=FONTS["BADGE"][1], weight=FONTS["BADGE"][2]),
-                    fg_color="#2A2A3A",
+                    fg_color=COLORS["BADGE"],
                     text_color=gender_color,
                     corner_radius=0,
                     height=22,
@@ -489,7 +530,7 @@ class TabDictionary(ctk.CTkFrame):
                 self._def_frame,
                 text=tag_str,
                 font=ctk.CTkFont(family=FONTS["TAG"][0], size=FONTS["TAG"][1], slant=FONTS["TAG"][3]),
-                text_color="#7A8AB8",
+                text_color=COLORS["TEXT_TAG"],
                 anchor="w",
             ).grid(row=row, column=0, sticky="w", padx=left_pad + 20, pady=(4, 0))
             row += 1

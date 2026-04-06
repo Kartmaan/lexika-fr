@@ -31,12 +31,13 @@ def _bind_mousewheel(scrollable_frame):
 class TabLexicon(ctk.CTkFrame):
     """Personal lexicon management tab."""
 
-    def __init__(self, parent, lexicon, on_voir_dans_dico=None, **kwargs):
+    def __init__(self, parent, lexicon, view_in_dict=None, **kwargs):
         super().__init__(parent, fg_color="transparent", **kwargs)
         self.lexicon = lexicon
-        self.on_view_in_dict = on_voir_dans_dico
+        self.on_view_in_dict = view_in_dict
         self._selected_word: str | None = None
         self._word_buttons: dict[str, ctk.CTkButton] = {}
+        self._search_var = ctk.StringVar()
 
         self._build_ui()
 
@@ -70,9 +71,9 @@ class TabLexicon(ctk.CTkFrame):
         self._count_label.pack(side="left", padx=(0, 16), pady=12)
 
         for text, color, hover, cmd in [
-            ("+ Custom word", "#5A4E8A", "#6A5E9A", self._open_custom_form),
-            ("Export",        COLORS["SURFACE2"], "#3A3A5C", self._export),
-            ("Import",        COLORS["SURFACE2"], "#3A3A5C", self._import),
+            ("+ Custom word", COLORS["LEX_CUST_BTN"], COLORS["LEX_CUST_BTN_HOVER"], self._open_custom_form),
+            ("Export",        COLORS["SURFACE2"], COLORS["ACCENT"], self._export),
+            ("Import",        COLORS["SURFACE2"], COLORS["ACCENT"], self._import),
         ]:
             ctk.CTkButton(
                 header, text=text,
@@ -90,16 +91,48 @@ class TabLexicon(ctk.CTkFrame):
         )
         left_col.grid(row=1, column=0, sticky="nsew", padx=(20, 6), pady=(0, 20))
         left_col.grid_propagate(False)
-        left_col.grid_rowconfigure(0, weight=1)
+        left_col.grid_rowconfigure(1, weight=1)   # row 0 = search bar, row 1 = list
         left_col.grid_columnconfigure(0, weight=1)
 
+        # --- Search bar ---
+        search_bar = ctk.CTkFrame(left_col, fg_color="transparent")
+        search_bar.grid(row=0, column=0, sticky="ew", padx=8, pady=(8, 4))
+        search_bar.grid_columnconfigure(0, weight=1)
+
+        # Entry for live search filtering. The _refresh_list method will read 
+        # the current value of self._search_var to filter the word list.
+        self._search_entry = ctk.CTkEntry(
+            search_bar,
+            textvariable=self._search_var,
+            placeholder_text="Search...",
+            font=ctk.CTkFont(family=FONTS["LEX_LABEL"][0], size=FONTS["LEX_LABEL"][1]),
+            fg_color=COLORS["SURFACE2"], border_color="#3A3A5C",
+            text_color=COLORS["TEXT"], height=30, corner_radius=0,
+        )
+        self._search_entry.grid(row=0, column=0, sticky="ew", padx=(0, 4))
+
+        # Reset search button (X) to clear the search field and show the full list again
+        ctk.CTkButton(
+            search_bar,
+            text="X",
+            font=ctk.CTkFont(family=FONTS["LEX_LABEL"][0], size=11),
+            fg_color=COLORS["SURFACE2"], hover_color=COLORS["LEX_RESET_BTN_HOVER"],
+            text_color=COLORS["TEXT"],
+            width=30, height=30, corner_radius=0,
+            command=self._reset_search,
+        ).grid(row=0, column=1)
+
+        # Trigger live filtering on every keystroke
+        self._search_var.trace_add("write", lambda *_: self._refresh_list())
+
+        # --- Word list ---
         self._word_list = ctk.CTkScrollableFrame(
             left_col,
             fg_color="transparent",
-            scrollbar_button_color="#3A3A5C",
+            scrollbar_button_color=COLORS["SCROLLBAR"],
             scrollbar_button_hover_color=COLORS["ACCENT"],
         )
-        self._word_list.grid(row=0, column=0, sticky="nsew", padx=4, pady=4)
+        self._word_list.grid(row=1, column=0, sticky="nsew", padx=4, pady=(0, 4))
         self._word_list.grid_columnconfigure(0, weight=1)
         _bind_mousewheel(self._word_list)
 
@@ -124,7 +157,7 @@ class TabLexicon(ctk.CTkFrame):
         self._def_frame = ctk.CTkScrollableFrame(
             self._right_column,
             fg_color="transparent",
-            scrollbar_button_color="#3A3A5C",
+            scrollbar_button_color=COLORS["SCROLLBAR"],
             scrollbar_button_hover_color=COLORS["ACCENT"],
         )
         self._def_frame.grid(row=1, column=0, sticky="nsew", padx=4, pady=4)
@@ -147,11 +180,12 @@ class TabLexicon(ctk.CTkFrame):
         )
         self._btn_view_dict.grid(row=0, column=0, sticky="w")
 
+        # Delete button to remove the selected word from the lexicon. Only enabled when a word is selected.
         self._btn_delete = ctk.CTkButton(
             action_bar,
             text="Remove from lexicon",
             font=ctk.CTkFont(family=FONTS["BTN"][0], size=FONTS["BTN"][1]),
-            fg_color="#4A1A1A", hover_color="#6A2A2A",
+            fg_color=COLORS["TAB_BTN_DELETE"], hover_color=COLORS["TAB_BTN_DELETE_HOVER"],
             text_color=COLORS["ERROR"],
             height=34, corner_radius=0, state="disabled",
             command=self._delete_word,
@@ -165,14 +199,30 @@ class TabLexicon(ctk.CTkFrame):
     # Word list (left column)
     # ------------------------------------------------------------------
 
+    def _reset_search(self):
+        """Clears the search field and restores the full word list."""
+        self._search_var.set("")
+        self._search_entry.focus_set()
+
     def _refresh_list(self):
+        """Refreshes the word list, filtered by the current search query."""
+
+        # Clear existing buttons
         for w in self._word_list.winfo_children():
             w.destroy()
         self._word_buttons.clear()
 
-        words = self.lexicon.words()
+        query = self._search_var.get().strip().lower()
+        all_words = self.lexicon.words()
 
-        if not words:
+        # Filter by query if one is active
+        words = (
+            [w for w in all_words if w.lower().startswith(query)]
+            if query else all_words
+        )
+
+        # If the lexicon is empty, show a placeholder message instead of an empty list.
+        if not all_words:
             ctk.CTkLabel(
                 self._word_list,
                 text="Lexicon is empty.\nAdd words from\nthe Dictionary tab.",
@@ -182,17 +232,20 @@ class TabLexicon(ctk.CTkFrame):
             ).grid(row=0, column=0, pady=20, padx=8)
             return
 
+        # Create a button for each word in the lexicon. Custom words are visually distinguished.
         for i, word in enumerate(words):
             entry = self.lexicon.get(word)
             is_custom = entry and entry.get("source") == "custom"
 
+            # Words vignetted with a different background color if they are custom entries, 
+            # and a hover effect for better interactivity.
             btn = ctk.CTkButton(
                 self._word_list,
                 text=word.capitalize(),
                 font=ctk.CTkFont(family=FONTS["LEX_WRD_LIST"][0], size=FONTS["LEX_WRD_LIST"][1]),
-                fg_color="#2A1A3A" if is_custom else "#2A2A4A",
-                hover_color="#3A3A5C",
-                text_color="#C8A8FF" if is_custom else COLORS["TEXT"],
+                fg_color=COLORS["LEX_WORD_FRAME_CUST"] if is_custom else COLORS["LEX_WORD_FRAME"],
+                hover_color=COLORS["LEX_WORD_FRAME_CUST_HOVER"] if is_custom else COLORS["LEX_WORD_FRAME_HOVER"],
+                text_color=COLORS["LEX_TXT_WORD_CUST"] if is_custom else COLORS["LEX_TXT_WORD"],
                 height=36, anchor="w", corner_radius=0,
                 command=lambda w=word: self._select_word(w),
             )
@@ -202,6 +255,12 @@ class TabLexicon(ctk.CTkFrame):
         self._count_label.configure(text=self._count_text())
 
     def _select_word(self, word: str):
+        """Handles selection of a word from the list, updating the definition 
+        display and action buttons.
+        
+        Args:
+            word: The selected word.
+        """
         # Reset previous selection
         if self._selected_word and self._selected_word in self._word_buttons:
             prev_entry = self.lexicon.get(self._selected_word)
@@ -228,9 +287,12 @@ class TabLexicon(ctk.CTkFrame):
     # ------------------------------------------------------------------
 
     def _show_placeholder(self):
+        """Shows a placeholder message in the definition area when no word is selected."""
         for w in self._def_frame.winfo_children():
             w.destroy()
+
         self._def_title.configure(text="")
+
         ctk.CTkLabel(
             self._def_frame,
             text="Select a word from the list.",
@@ -239,6 +301,12 @@ class TabLexicon(ctk.CTkFrame):
         ).grid(row=0, column=0, pady=20, padx=16)
 
     def _show_definition(self, word: str, entry: dict):
+        """Displays the definitions of the selected word in the right column.
+        
+        Args:
+            word: The selected word.
+            entry: The word entry containing its definitions.
+        """
         for w in self._def_frame.winfo_children():
             w.destroy()
 
@@ -267,7 +335,7 @@ class TabLexicon(ctk.CTkFrame):
                 badge_row,
                 text=f"  {pos_label}  ",
                 font=ctk.CTkFont(family=FONTS["BADGE"][0], size=FONTS["BADGE"][1], weight=FONTS["BADGE"][2]),
-                fg_color="#3A3A5C", text_color=COLORS["ACCENT"],
+                fg_color=COLORS["BADGE"], text_color=COLORS["ACCENT"],
                 corner_radius=0, height=22,
             ).pack(side="left", padx=(0, 4))
 
@@ -276,20 +344,33 @@ class TabLexicon(ctk.CTkFrame):
                     badge_row,
                     text=f"  {GENDER_LABELS[gender]}  ",
                     font=ctk.CTkFont(family=FONTS["BADGE"][0], size=FONTS["BADGE"][1], weight=FONTS["BADGE"][2]),
-                    fg_color="#2A2A3A", text_color=GENDER_COLORS[gender],
+                    fg_color=COLORS["BADGE"], text_color=GENDER_COLORS[gender],
                     corner_radius=0, height=22,
                 ).pack(side="left")
 
+            # Display definitions for this lexeme, including gloss, tags, examples, and sub-definitions.
             for i, defn in enumerate(lexeme.get("definitions", []), 1):
                 row = self._show_definition_item(row, i, defn)
 
     def _show_definition_item(self, row: int, number, defn: dict) -> int:
+        """Displays a single definition item, including gloss, tags, examples, and sub-definitions.
+        Returns the next available row index after rendering this item.
+        
+        Args:
+            row: The starting row index to render this definition item.
+            number: The definition number (e.g., 1, 2, or "1.1" for sub-definitions).
+            defn: The definition dictionary containing gloss, tags, examples, and sub-definitions.
+        
+        Returns:
+            The next available row index after rendering this item.
+        """
         gloss = defn.get("gloss", "")
         tags = " ".join(filter(None, [
             f"({defn['register']})" if defn.get("register") else "",
             f"[{defn['semantic']}]" if defn.get("semantic") else "",
         ]))
 
+        # Main gloss line with number and definition text
         if tags:
             ctk.CTkLabel(
                 self._def_frame, text=tags,
@@ -302,12 +383,14 @@ class TabLexicon(ctk.CTkFrame):
         frame.grid(row=row, column=0, sticky="ew", padx=16, pady=(2, 2))
         frame.grid_columnconfigure(1, weight=1)
 
+        # Number label (1., 2., etc.)
         ctk.CTkLabel(
             frame, text=f"{number}.",
             font=ctk.CTkFont(family=FONTS["PREFIX_DEF"][0], size=FONTS["PREFIX_DEF"][1], weight=FONTS["PREFIX_DEF"][2]),
             text_color=COLORS["ACCENT"], width=28, anchor="ne",
         ).grid(row=0, column=0, sticky="ne", padx=(0, 6))
 
+        # Gloss may contain multiple lines, so use a label with wraplength instead of an entry
         ctk.CTkLabel(
             frame, text=gloss,
             font=ctk.CTkFont(family=FONTS["DEFINITION"][0], size=FONTS["DEFINITION"][1]),
@@ -315,6 +398,7 @@ class TabLexicon(ctk.CTkFrame):
         ).grid(row=0, column=1, sticky="nw")
         row += 1
 
+        # Examples
         for ex in defn.get("exemples", []):
             ctk.CTkLabel(
                 self._def_frame, text=f"  \"{ex}\"",
@@ -323,6 +407,7 @@ class TabLexicon(ctk.CTkFrame):
             ).grid(row=row, column=0, sticky="w", padx=36, pady=(1, 1))
             row += 1
 
+        # Sub-definitions (nested)
         for j, sub in enumerate(defn.get("sous_definitions", []), 1):
             row = self._show_definition_item(row, f"{number}.{j}", sub)
 
@@ -333,6 +418,7 @@ class TabLexicon(ctk.CTkFrame):
     # ------------------------------------------------------------------
 
     def _delete_word(self):
+        """Removes the selected word from the lexicon after user confirmation."""
         if not self._selected_word:
             return
         ok = messagebox.askyesno(
@@ -348,12 +434,15 @@ class TabLexicon(ctk.CTkFrame):
             self._show_placeholder()
 
     def _view_in_dict(self):
+        """If the selected word is from the dictionary, trigger the 
+        callback to view it in the Dictionary tab."""
         if self._selected_word and self.on_view_in_dict:
             entry = self.lexicon.get(self._selected_word)
             if entry:
                 self.on_view_in_dict(self._selected_word, entry)
 
     def _export(self):
+        """Exports the current lexicon to a JSON file chosen by the user."""
         path = filedialog.asksaveasfilename(
             title="Export lexicon",
             defaultextension=".json",
@@ -368,6 +457,7 @@ class TabLexicon(ctk.CTkFrame):
                 messagebox.showerror("Error", "Export failed.")
 
     def _import(self):
+        """Imports a lexicon from a JSON file chosen by the user, with confirmation."""
         path = filedialog.askopenfilename(
             title="Import a lexicon",
             filetypes=[("JSON file", "*.json")],
@@ -381,20 +471,25 @@ class TabLexicon(ctk.CTkFrame):
                 messagebox.showerror("Import error", msg)
 
     def _open_custom_form(self):
+        """Opens the form to add a custom word to the lexicon."""
         CustomWordForm(self, self.lexicon, self._on_custom_word_added)
 
     def _on_custom_word_added(self):
+        """Callback after a custom word is added to refresh the 
+        list and show the new word."""
         self._refresh_list()
 
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
 
-    def rafraichir(self):
-        """Called from other tabs after the lexicon is modified."""
+    def refresh(self):
+        """Called from other tabs after the lexicon is modified.
+        Ensures the word list and count are up to date."""
         self._refresh_list()
 
     def _count_text(self) -> str:
+        """Returns a string with the current number of words in the lexicon."""
         n = self.lexicon.word_count()
         return f"({n} word{'s' if n > 1 else ''})"
 
@@ -420,12 +515,15 @@ class CustomWordForm(ctk.CTkToplevel):
         self.after(50, self._post_init)
 
     def _post_init(self):
+        """Called shortly after initialization to ensure the window is fully 
+        created before building the UI."""
         self._build()
         self.lift()
         self.focus_set()
         self.grab_set()
 
     def _build(self):
+        """Constructs the UI elements of the custom word form."""
         self.grid_columnconfigure(0, weight=1)
         self.update_idletasks()
 
@@ -471,8 +569,10 @@ class CustomWordForm(ctk.CTkToplevel):
         self._definitions_frame.grid(row=5, column=0, padx=24, pady=(4, 8), sticky="ew")
         self._definitions_frame.grid_columnconfigure(0, weight=1)
 
-        self._add_definition_field()
+        self._add_definition_field() # Start with one definition field by default
 
+        # Button to add more definition fields if the user wants to enter multiple 
+        # definitions for the same word.
         ctk.CTkButton(
             self, text="+ Add a definition",
             font=ctk.CTkFont(family=FONTS["BTN"][0], size=FONTS["BTN"][1]),
@@ -492,23 +592,26 @@ class CustomWordForm(ctk.CTkToplevel):
         buttons_frame = ctk.CTkFrame(self, fg_color="transparent")
         buttons_frame.grid(row=8, column=0, padx=24, pady=(8, 20), sticky="e")
 
+        # Cancel button simply closes the form without saving anything.
         ctk.CTkButton(
             buttons_frame, text="Cancel",
             font=ctk.CTkFont(family=FONTS["BTN"][0], size=FONTS["BTN"][1]),
-            fg_color=COLORS["SURFACE2"], hover_color="#3A3A5C",
+            fg_color=COLORS["SURFACE2"], hover_color=COLORS["LEX_RESET_BTN_HOVER"],
             text_color=COLORS["TEXT"], height=38, width=100, corner_radius=0,
             command=self.destroy,
         ).pack(side="left", padx=(0, 8))
 
+        # Add button validates the input and, if valid, adds the new custom word to the lexicon and closes the form.
         ctk.CTkButton(
             buttons_frame, text="Add",
             font=ctk.CTkFont(family=FONTS["BTN"][0], size=FONTS["BTN"][1], weight="bold"),
-            fg_color=COLORS["SUCCESS"], hover_color="#2EAA6A",
+            fg_color=COLORS["SUCCESS"], hover_color=COLORS["LEX_CUST_ADD_BTN_HOVER"],
             text_color="white", height=38, width=100, corner_radius=0,
             command=self._validate,
         ).pack(side="left")
 
     def _add_definition_field(self):
+        """Adds a new text box for entering a definition."""
         i = len(self._definition_fields)
         tb = ctk.CTkTextbox(
             self._definitions_frame,
@@ -521,6 +624,7 @@ class CustomWordForm(ctk.CTkToplevel):
         self._definition_fields.append(tb)
 
     def _validate(self):
+        """Validates the input fields and, if valid, adds the custom word to the lexicon."""
         word = self._word_entry.get().strip()
         if not word:
             self._error_label.configure(text="The 'Word' field is required.")

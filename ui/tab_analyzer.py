@@ -29,14 +29,18 @@ def _bind_mousewheel(scrollable_frame):
     canvas = scrollable_frame._parent_canvas
 
     def scroll(delta):
+        """delta > 0 means scroll up, delta < 0 means scroll down
+        """
         canvas.yview_scroll(delta, "units")
 
     def on_enter(_):
+        """Bind all relevant mouse wheel events when the cursor enters the scrollable area."""
         scrollable_frame.bind_all("<Button-4>",   lambda e: scroll(-1))
         scrollable_frame.bind_all("<Button-5>",   lambda e: scroll(1))
         scrollable_frame.bind_all("<MouseWheel>", lambda e: scroll(int(-1 * e.delta / 120)))
 
     def on_leave(_):
+        """Unbind mouse wheel events when the cursor leaves the scrollable area."""
         scrollable_frame.unbind_all("<Button-4>")
         scrollable_frame.unbind_all("<Button-5>")
         scrollable_frame.unbind_all("<MouseWheel>")
@@ -72,6 +76,7 @@ class TabAnalyzer(ctk.CTkFrame):
     # ---- Left column: filter panel -----------------------------------
 
     def _build_filter_panel(self):
+        """Creates the left-side filter panel with all input fields and buttons."""
         left = ctk.CTkFrame(
             self, fg_color=COLORS["SURFACE3"], corner_radius=0,
             border_width=1, border_color="#2E2E42", width=280
@@ -93,7 +98,7 @@ class TabAnalyzer(ctk.CTkFrame):
         # Scrollable filters area
         filters_scroll = ctk.CTkScrollableFrame(
             left, fg_color="transparent",
-            scrollbar_button_color="#3A3A5C",
+            scrollbar_button_color=COLORS["SCROLLBAR"],
             scrollbar_button_hover_color=COLORS["ACCENT"],
         )
         filters_scroll.grid(row=1, column=0, sticky="nsew", padx=4, pady=(0, 4))
@@ -111,7 +116,7 @@ class TabAnalyzer(ctk.CTkFrame):
         ctk.CTkButton(
             btn_area, text="Reset",
             font=ctk.CTkFont(family=FONTS["BTN"][0], size=FONTS["BTN"][1]),
-            fg_color=COLORS["SURFACE2"], hover_color="#3A3A5C",
+            fg_color=COLORS["SURFACE2"], hover_color=COLORS["ANALYZER_BTN_HOVER"],
             text_color=COLORS["TEXT2"],
             height=34, corner_radius=0,
             command=self._reset_filters,
@@ -120,7 +125,7 @@ class TabAnalyzer(ctk.CTkFrame):
         ctk.CTkButton(
             btn_area, text="Search",
             font=ctk.CTkFont(family=FONTS["BTN"][0], size=FONTS["BTN"][1], weight=FONTS["BTN"][2]),
-            fg_color=COLORS["ACCENT"], hover_color="#3A8EEF",
+            fg_color=COLORS["ACCENT"], hover_color=COLORS["HOVER"],
             text_color="white",
             height=34, corner_radius=0,
             command=self._run_analysis,
@@ -141,6 +146,7 @@ class TabAnalyzer(ctk.CTkFrame):
 
         # Helper: small entry
         def entry_field(var, placeholder, r, width=None):
+            "Creates a single-line entry field bound to var, with placeholder text."
             e = ctk.CTkEntry(
                 parent, textvariable=var,
                 placeholder_text=placeholder,
@@ -303,6 +309,7 @@ class TabAnalyzer(ctk.CTkFrame):
             text_color=COLORS["NEUTRAL"], width=24,
         ).grid(row=0, column=0, padx=(0, 4))
 
+        # Position entry
         ctk.CTkEntry(
             frame, textvariable=pos_var,
             font=ctk.CTkFont(family=FONTS["ANALYZER_ENTRY"][0], size=FONTS["ANALYZER_ENTRY"][1]),
@@ -317,6 +324,7 @@ class TabAnalyzer(ctk.CTkFrame):
             text_color=COLORS["NEUTRAL"],
         ).grid(row=0, column=2, padx=(0, 4))
 
+        # Letter entry
         ctk.CTkEntry(
             frame, textvariable=letter_var,
             font=ctk.CTkFont(family=FONTS["ANALYZER_ENTRY"][0], size=FONTS["ANALYZER_ENTRY"][1]),
@@ -348,6 +356,7 @@ class TabAnalyzer(ctk.CTkFrame):
     # ---- Right column: results panel ---------------------------------
 
     def _build_results_panel(self):
+        """Creates the right-side results panel, initially empty."""
         right = ctk.CTkFrame(
             self, fg_color=COLORS["SURFACE"], corner_radius=0,
             border_width=1, border_color="#2E2E42"
@@ -379,7 +388,7 @@ class TabAnalyzer(ctk.CTkFrame):
         # Scrollable results area
         self._results_frame = ctk.CTkScrollableFrame(
             right, fg_color=COLORS["SURFACE"],
-            scrollbar_button_color="#3A3A5C",
+            scrollbar_button_color=COLORS["SCROLLBAR"],
             scrollbar_button_hover_color=COLORS["ACCENT"],
             corner_radius=0,
         )
@@ -499,6 +508,7 @@ class TabAnalyzer(ctk.CTkFrame):
     # ------------------------------------------------------------------
 
     def _display_results(self, words: list[str], truncated: bool):
+        """Updates the results panel with the given list of words."""
         self._spinner_label.configure(text="")
 
         for w in self._results_frame.winfo_children():
@@ -553,6 +563,7 @@ class TabAnalyzer(ctk.CTkFrame):
             self.on_word_click(word)
 
     def _show_error(self, message: str):
+        """Displays an error message in the results panel."""
         self._spinner_label.configure(text="")
         self._result_label.configure(text=message, text_color=COLORS["ERROR"])
 
@@ -561,6 +572,7 @@ class TabAnalyzer(ctk.CTkFrame):
     # ------------------------------------------------------------------
 
     def _reset_filters(self):
+        """Clears all filter fields and resets the results panel."""
         self._var_length.set("")
         self._var_start.set("")
         self._var_end.set("")
@@ -577,6 +589,10 @@ class TabAnalyzer(ctk.CTkFrame):
         self._add_nth_row()
 
         # Reset results panel
+        for w in self._results_frame.winfo_children():
+            w.destroy()
+
+        # Reset status message    
         self._result_label.configure(
             text="Results will appear here after a search.",
             text_color=COLORS["NEUTRAL"],
