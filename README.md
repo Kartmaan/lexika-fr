@@ -1,6 +1,10 @@
 # Lexika - Offline French Dictionary
 
-Lexika is a Python desktop application built around an offline French dictionary of nearly 900,000 entries. It offers four integrated tools: a **dictionary** for looking up words and their structured definitions, a personal **lexicon** for saving and managing vocabulary, a **quiz** for reviewing saved words through interactive flashcards, and an **analyzer** for filtering the entire dictionary using multiple combinable linguistic criteria.
+Lexika is a Python desktop application built around an offline French dictionary of nearly 900,000 entries. It offers four integrated tools: 
+- **Dictionary**
+- **Lexicon**
+- **Quiz**
+- **Analyzer**
 
 ---
 
@@ -61,7 +65,7 @@ python main.py
 
 On first launch, if `data/french_dict.db` is missing, a setup window appears automatically and offers two options:
 
-- **Download** the dictionary from Hugging Face (~270 MB)
+- **Download** the dictionary from Hugging Face (~280 MB)
 - **Import** a compatible `.db` file already on your disk
 
 The file is automatically validated before use (extension, SQLite structure, data presence).
@@ -100,7 +104,9 @@ lexika-fr/
 
 ## Dictionary Tab
 
-The main tab of the application.
+The main tab of the application. Allows access to the definitions of a word
+
+![Interface](assets/readme/dict_cap.png)
 
 **Search**
 - Type a word in the search field and confirm with the button or the `Enter` key
@@ -130,7 +136,7 @@ The main tab of the application.
 
 ## Lexicon Tab
 
-The personal lexicon, laid out in two columns.
+Personal lexicon of words added from the dictionary.
 
 ![Lexicon](assets/readme/lexicon_cap.png)
 
@@ -148,7 +154,7 @@ The personal lexicon, laid out in two columns.
 - **Remove** a word from the lexicon using the dedicated button
 - **Add a custom word**: opens a form to enter a word and one or more free-form definitions - useful for technical terms, jargon, or neologisms absent from the dictionary
 - **Export** the lexicon to a `.json` file of your choice
-- **Import** a previously exported lexicon - existing words are preserved and new ones are merged in
+- **Import** a previously exported lexicon (existing words are preserved and new ones are merged in)
 
 ---
 
@@ -241,7 +247,9 @@ Click **+ Add position** to add a positional constraint row (position + letter).
 
 ---
 
-## Technical Notes - Why SQLite?
+## Technical Notes
+
+### Why SQLite?
 
 The dictionary is stored as a **SQLite database** (`.db`) rather than a flat file format such as CSV, JSON, or Parquet. This choice was driven by the specific requirements of a desktop dictionary application handling nearly 900,000 entries.
 
@@ -255,17 +263,29 @@ The Analyzer tab runs multi-criteria queries (length, prefix, suffix, contained 
 
 **Zero memory footprint at startup**
 
-SQLite is a lazy reader: the application connects to the file but loads nothing into RAM until a query is made. The 270 MB database occupies virtually no memory at rest. A JSON or Parquet approach would require loading the entire dataset into memory on startup, adding 20–270 MB to the application's footprint depending on the format.
+SQLite is a lazy reader: the application connects to the file but loads nothing into RAM until a query is made. The 280 MB database occupies virtually no memory at rest. A JSON or Parquet approach would require loading the entire dataset into memory on startup, adding 20–270 MB to the application's footprint depending on the format.
 
-**Trade-offs acknowledged**
+### Why CustomTkinter ?
 
-SQLite is not the optimal format for every use case. For machine learning pipelines, where columnar access, compression, and integration with frameworks like Pandas, PyArrow, or Hugging Face `datasets` matter, a **Parquet** export of the same data would be more appropriate.
+Lexika's graphical interface is built with CustomTkinter, a modern UI library that extends Python's standard tkinter with a dark-mode-first design system, rounded widgets, and a theming engine, without requiring any external graphical toolkit such as Qt or GTK.
+
+**No system dependencies**
+
+Standard tkinter ships with Python on all major platforms. CustomTkinter adds only a pure-Python layer on top of it, meaning the entire UI stack installs with a single pip install customtkinter. There is no native library to compile, no system package to install, and no compatibility issue between platforms.
+
+**Cross-platform out of the box**
+
+The same code runs on Linux, Windows, and macOS without conditional branches or platform-specific backends. Window management, icon handling, and font rendering adapt automatically to the host OS.
+
+**Lightweight footprint**
+
+Unlike Electron-based or Qt-based alternatives, CustomTkinter adds negligible overhead to startup time and RAM usage. For an offline dictionary application where the database itself weighs 280 MB, keeping the UI layer minimal was a deliberate choice.
 
 ---
 
 ## Dictionary Source
 
-The dictionary is derived from **WiktionaryX**, a structured lexical resource parsed from the French Wiktionary, produced by **Franck Sajous**, CNRS research engineer and lecturer in Language Sciences at the University of Toulouse.
+The dictionary is derived from **WiktionaryX**, a XML structured lexical resource parsed from the French Wiktionary, produced by **Franck Sajous**, CNRS research engineer and lecturer in Language Sciences at the University of Toulouse.
 
 Original source: http://redac.univ-tlse2.fr/lexiques/wiktionaryx.html
 
